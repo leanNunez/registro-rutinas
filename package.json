@@ -1,0 +1,12 @@
+{
+  "name": "registro-rutinas",
+  "version": "1.0.0",
+  "description": "FitPlan: gestor de rutinas, dieta e historial por persona.",
+  "private": true,
+  "scripts": {
+    "api": "json-server --watch db.json --port 3000"
+  },
+  "devDependencies": {
+    "json-server": "0.17.4"
+  }
+}

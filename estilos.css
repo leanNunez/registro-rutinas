@@ -1,0 +1,75 @@
+/* ============================================================
+   estilos.css -- TODOS los estilos del proyecto van acá.
+   Está vacío a propósito: abajo te dejamos la lista de lo que
+   hay que estilar y un consejo de cómo hacer cada parte.
+   Completá de a poco, mirando la página en el navegador.
+   ============================================================ */
+
+
+/* ---------- 1) VARIABLES DE COLOR (recomendado empezar por acá) ----------
+   Definí los colores una vez en :root y reusalos con var(--nombre).
+   Ejemplo de qué definir: color de fondo, color de texto, color principal
+   (para botones), color de peligro (para borrar).
+   Cómo: :root { --principal: #1f9d57; ... }  y luego  color: var(--principal);
+*/
+
+
+/* ---------- 2) RESET BÁSICO ----------
+   Sacar márgenes y padding por defecto y usar box-sizing: border-box.
+   Cómo: *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*/
+
+
+/* ---------- 3) BODY ----------
+   Tipografía, color de texto y color de fondo generales.
+*/
+
+
+/* ---------- 4) BARRA DE NAVEGACIÓN (.barra) ----------
+   La barra de arriba con el logo y los enlaces.
+   Consejo: usar display: flex y justify-content: space-between para separar
+   el logo (.barra__logo) de los enlaces (.barra__enlaces).
+*/
+
+
+/* ---------- 5) PORTADA / HERO (.portada) ----------
+   La presentación de index.html. Tiene texto a un lado y la caja de video al otro.
+   Consejo: display: grid con 2 columnas (grid-template-columns: 1fr 1fr).
+   - .portada__texto h1  -> título bien grande
+   - .portada__video     -> caja vacía: dale alto, un borde punteado y centrá el texto
+*/
+
+
+/* ---------- 6) LAYOUT DE PÁGINAS (.pagina y .bloque) ----------
+   .pagina -> centra el contenido y le da un ancho máximo (ej: max-width: 900px; margin: 0 auto).
+   .bloque -> cada sección: fondo, borde, padding y separación entre bloques.
+*/
+
+
+/* ---------- 7) FORMULARIOS ----------
+   Estilar inputs, selects, textarea y el fieldset de los días.
+   Consejo: dar padding, borde y que el input ocupe el ancho (width: 100%).
+*/
+
+
+/* ---------- 8) BOTONES (.boton, o el <button>) ----------
+   Un estilo base y dos variantes: principal (color lleno) y peligro (para borrar).
+   Consejo: padding, border-radius, cursor: pointer y un color de :hover.
+*/
+
+
+/* ---------- 9) TARJETAS (.tarjeta) ----------
+   Cada item de una lista (una rutina, un ejercicio, etc.) se muestra en una tarjeta.
+   Consejo: fondo, borde, padding y un pequeño margen arriba para separarlas.
+*/
+
+
+/* ---------- 10) RESUMEN DEL HISTORIAL (#resumen) ----------
+   Las métricas de progreso. Consejo: mostrarlas en columnas con display: grid.
+*/
+
+
+/* ---------- 11) RESPONSIVE (al final) ----------
+   En pantallas chicas, que la portada pase a 1 sola columna.
+   Cómo: @media (max-width: 800px) { .portada { grid-template-columns: 1fr; } }
+*/

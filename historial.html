@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitPlan — Historial</title>
+  <link rel="stylesheet" href="estilos.css" />
+</head>
+<body>
+
+  <!-- ===== BARRA DE NAVEGACIÓN ===== -->
+  <nav class="barra">
+    <div class="barra__logo">FitPlan</div>
+    <div class="barra__enlaces">
+      <a href="index.html">Inicio</a>
+      <a href="crear-rutina.html">Crear rutina</a>
+      <a href="historial.html">Historial</a>
+    </div>
+  </nav>
+
+  <main class="pagina">
+    <h1>Historial y progreso</h1>
+    <p>Seguimiento de cargas, cambios de rutina y próximos pasos.</p>
+
+    <!-- ===== 1) ELEGIR PERSONA ===== -->
+    <section class="bloque">
+      <label for="selector-persona">Persona</label>
+      <select id="selector-persona"></select>
+    </section>
+
+    <!-- ===== 2) RESUMEN (se calcula con el historial) =====
+          El JS escribe acá las métricas: progreso de carga, último cambio de
+          rutina y ejercicios que cuestan. -->
+    <section class="bloque">
+      <h2>Resumen</h2>
+      <div id="resumen"></div>
+    </section>
+
+    <!-- ===== 3) PRÓXIMOS CAMBIOS SUGERIDOS (texto editable) =====
+          Es un texto que escribe el entrenador y se guarda en la persona. -->
+    <section class="bloque">
+      <h2>Próximos cambios sugeridos</h2>
+      <form id="formulario-sugerencia">
+        <textarea id="texto-sugerencia" placeholder="Ej: subir 2.5 kg en sentadilla..."></textarea>
+        <button type="submit">Guardar sugerencia</button>
+      </form>
+    </section>
+
+    <!-- ===== 4) REGISTRAR UN ENTRENAMIENTO =====
+          Cada registro guarda: ejercicio, peso, repeticiones y dificultad.
+          La fecha se pone sola (la pone el JS). -->
+    <section class="bloque">
+      <h2>Registrar entrenamiento</h2>
+      <form id="formulario-registro">
+        <label for="selector-rutina-historial">Rutina</label>
+        <select id="selector-rutina-historial"></select>
+
+        <label for="registro-ejercicio">Ejercicio</label>
+        <input type="text" id="registro-ejercicio" placeholder="Ej: Sentadilla" />
+
+        <label for="registro-peso">Peso (kg)</label>
+        <input type="number" id="registro-peso" placeholder="80" />
+
+        <label for="registro-repeticiones">Repeticiones</label>
+        <input type="number" id="registro-repeticiones" placeholder="5" />
+
+        <label for="registro-dificultad">Dificultad</label>
+        <select id="registro-dificultad">
+          <option value="fácil">Fácil</option>
+          <option value="media">Media</option>
+          <option value="alta">Alta</option>
+        </select>
+
+        <button type="submit">Registrar</button>
+      </form>
+    </section>
+
+    <!-- ===== 5) LISTA DE REGISTROS ===== -->
+    <section class="bloque">
+      <h2>Registros</h2>
+      <div id="lista-historial"></div>
+    </section>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1/dist/axios.min.js"></script>
+  <script src="js/historial.js"></script>
+</body>
+</html>

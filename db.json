@@ -1,0 +1,18 @@
+{
+  "personas": [
+    { "id": 1, "nombre": "Lucía Fernández", "edad": 28, "peso": 64, "estatura": 1.68, "objetivo": "Ganar fuerza", "sugerencia": "Subir 2.5 kg en sentadilla la próxima semana." },
+    { "id": 2, "nombre": "Marco Díaz", "edad": 34, "peso": 82, "estatura": 1.81, "objetivo": "Bajar grasa", "sugerencia": "" }
+  ],
+  "rutinas": [
+    { "id": 1, "personaId": 1, "nombre": "Fuerza superior", "dias": ["Lunes", "Miércoles", "Viernes"] }
+  ],
+  "ejercicios": [
+    { "id": 1, "rutinaId": 1, "nombre": "Press de banca", "series": 4, "repeticiones": 10, "descanso": "90 seg" }
+  ],
+  "dietas": [
+    { "id": 1, "personaId": 1, "momento": "Desayuno", "descripcion": "Avena con frutas y dos huevos" }
+  ],
+  "historial": [
+    { "id": 1, "personaId": 1, "rutinaId": 1, "fecha": "2026-05-11", "ejercicio": "Press de banca", "peso": 60, "repeticiones": 10, "dificultad": "media" }
+  ]
+}

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitPlan — Crear rutina</title>
+  <link rel="stylesheet" href="estilos.css" />
+</head>
+<body>
+
+  <!-- ===== BARRA DE NAVEGACIÓN ===== -->
+  <nav class="barra">
+    <div class="barra__logo">FitPlan</div>
+    <div class="barra__enlaces">
+      <a href="index.html">Inicio</a>
+      <a href="crear-rutina.html">Crear rutina</a>
+      <a href="historial.html">Historial</a>
+    </div>
+  </nav>
+
+  <main class="pagina">
+    <h1>Crear rutina</h1>
+    <p>Elegí una persona para ver sus datos y armarle el plan.</p>
+
+    <!-- ===== 1) ELEGIR PERSONA =====
+          El JS llena este <select> con las personas (GET /personas).
+          Cuando se cambia, se muestran los datos y se cargan rutinas/dieta. -->
+    <section class="bloque">
+      <label for="selector-persona">Persona</label>
+      <select id="selector-persona"></select>
+    </section>
+
+    <!-- ===== 2) DATOS DE LA PERSONA =====
+          El JS escribe acá adentro los datos (peso, estatura, IMC, objetivo). -->
+    <section class="bloque">
+      <h2>Datos</h2>
+      <div id="datos-persona"></div>
+    </section>
+
+    <!-- ===== 3) RUTINAS =====
+          Formulario para crear una rutina + lista de las rutinas de la persona. -->
+    <section class="bloque">
+      <h2>Rutinas</h2>
+
+      <form id="formulario-rutina">
+        <label for="rutina-nombre">Nombre de la rutina</label>
+        <input type="text" id="rutina-nombre" placeholder="Ej: Fuerza superior" />
+
+        <!-- Los días son varios: usamos casillas (checkbox) con el mismo name="dia" -->
+        <fieldset>
+          <legend>Días</legend>
+          <label><input type="checkbox" name="dia" value="Lunes" /> Lunes</label>
+          <label><input type="checkbox" name="dia" value="Martes" /> Martes</label>
+          <label><input type="checkbox" name="dia" value="Miércoles" /> Miércoles</label>
+          <label><input type="checkbox" name="dia" value="Jueves" /> Jueves</label>
+          <label><input type="checkbox" name="dia" value="Viernes" /> Viernes</label>
+          <label><input type="checkbox" name="dia" value="Sábado" /> Sábado</label>
+          <label><input type="checkbox" name="dia" value="Domingo" /> Domingo</label>
+        </fieldset>
+
+        <button type="submit">Agregar rutina</button>
+      </form>
+
+      <!-- El JS dibuja acá una tarjeta por cada rutina -->
+      <div id="lista-rutinas"></div>
+    </section>
+
+    <!-- ===== 4) EJERCICIOS (de la rutina elegida) =====
+          Primero se elige una rutina en el <select>, después se le agregan ejercicios. -->
+    <section class="bloque">
+      <h2>Ejercicios</h2>
+
+      <label for="selector-rutina">Rutina</label>
+      <select id="selector-rutina"></select>
+
+      <form id="formulario-ejercicio">
+        <label for="ejercicio-nombre">Nombre del ejercicio</label>
+        <input type="text" id="ejercicio-nombre" placeholder="Ej: Press de banca" />
+
+        <label for="ejercicio-series">Series</label>
+        <input type="number" id="ejercicio-series" placeholder="4" />
+
+        <label for="ejercicio-repeticiones">Repeticiones</label>
+        <input type="number" id="ejercicio-repeticiones" placeholder="10" />
+
+        <label for="ejercicio-descanso">Descanso</label>
+        <input type="text" id="ejercicio-descanso" placeholder="Ej: 90 seg" />
+
+        <button type="submit">Agregar ejercicio</button>
+      </form>
+
+      <div id="lista-ejercicios"></div>
+    </section>
+
+    <!-- ===== 5) DIETA =====
+          Formulario para agregar comidas + lista de la dieta de la persona. -->
+    <section class="bloque">
+      <h2>Dieta</h2>
+
+      <form id="formulario-dieta">
+        <label for="dieta-momento">Momento</label>
+        <input type="text" id="dieta-momento" placeholder="Ej: Desayuno" />
+
+        <label for="dieta-descripcion">Descripción</label>
+        <input type="text" id="dieta-descripcion" placeholder="Ej: Avena con frutas" />
+
+        <button type="submit">Agregar a la dieta</button>
+      </form>
+
+      <div id="lista-dieta"></div>
+    </section>
+
+  </main>
+
+  <!-- Axios desde internet (queda como variable global "axios") -->
+  <script src="https://cdn.jsdelivr.net/npm/axios@1/dist/axios.min.js"></script>
+  <!-- Nuestro archivo para esta página (está vacío, hay que completarlo) -->
+  <script src="js/crear-rutina.js"></script>
+</body>
+</html>
