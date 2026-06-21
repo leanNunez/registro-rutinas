@@ -14,11 +14,14 @@ const URL_BASE = "http://localhost:3000";
 let personaElegida = null;
 
 // Referencias al DOM (Asegúrate de que estos IDs existan en tu historial.html)
+
 const formularioRegistro = document.getElementById("formulario-registro");
 const selectorPersona = document.getElementById("selector-persona");
 const selectorRutinaHistorial = document.getElementById("selector-rutina-historial");
 const listaHistorial = document.getElementById("lista-historial");
 const resumenDiv = document.getElementById("resumen");
+const formularioSugerencia = document.getElementById("formulario-sugerencia");
+const inputSugerencia = document.getElementById("texto-sugerencia");
 
 /* ---------- PASO 1: llenar el selector de personas ----------
    Igual que en crear-rutina.js: axios.get(".../personas"), recorrer y crear <option>.
@@ -48,8 +51,10 @@ async function cargarPersonas() {
         // Selecciona la primera persona por defecto y carga sus datos
         personaElegida = String(personas[0].id ?? "").trim();
         selectorPersona.value = personaElegida;
+
         await cargarRutinasParaHistorial(personaElegida);
         await cargarHistorial();
+        await cargarSugerencia(personaElegida);
 
     } catch (error) {
         console.error("Error al cargar personas:", error);
@@ -66,14 +71,20 @@ async function cargarPersonas() {
    - Cargá el historial (PASO 3).
 */
 
-// Función para cargar rutinas de la persona seleccionada
+// Función para cargar rutinas de la persona seleccionada y Asegúra de normalizar el personaId aquí:
 async function cargarRutinasParaHistorial(idPersona) {
     try {
-        const respuesta = await axios.get(`${URL_BASE}/rutinas?personaId=${idPersona}`);
-        const rutinas = respuesta.data;
-         console.log("Rutinas recibidas del servidor:", rutinas);
-        selectorRutinaHistorial.innerHTML = "";
+        // Obtenemos todas las rutinas
+        const respuesta = await axios.get(`${URL_BASE}/rutinas`);
+        const todasLasRutinas = respuesta.data;
+        
+        // Filtramos usando String() para comparar texto con texto
+        const rutinas = todasLasRutinas.filter(r => String(r.personaId) === String(idPersona));
 
+        console.log("Rutinas filtradas:", rutinas); 
+        
+        selectorRutinaHistorial.innerHTML = "";
+        
         if (rutinas.length === 0) {
             selectorRutinaHistorial.innerHTML = '<option>Sin rutinas</option>';
             return;
@@ -90,11 +101,23 @@ async function cargarRutinasParaHistorial(idPersona) {
     }
 }
 
+async function cargarSugerencia(idPersona) {
+    try {
+        const respuesta = await axios.get(`${URL_BASE}/personas/${idPersona}`);
+        const persona = respuesta.data;
+        // Asignamos la sugerencia actual al textarea
+        inputSugerencia.value = persona.sugerencia || ""; 
+    } catch (error) {
+        console.error("Error al cargar sugerencia:", error);
+    }
+}
+
 //Al cambiar de persona, se actualizan las rutinas disponibles y el historial
 selectorPersona.addEventListener("change", async () => {
     personaElegida = String(selectorPersona.value ?? "").trim();
     await cargarRutinasParaHistorial(personaElegida);
     await cargarHistorial();
+    await cargarSugerencia(personaElegida);
 });
 
 
@@ -256,6 +279,24 @@ iniciar();
        axios.patch(".../personas/" + personaElegida, { sugerencia: texto }).
 */
 
+formularioSugerencia.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    console.log("ID de persona:", personaElegida); // <--- MIRA LA CONSOLA
+    console.log("Valor sugerencia:", inputSugerencia.value); // <--- MIRA LA CONSOLA
+    console.log("El ID de la persona elegida es:", personaElegida);
+    try {
+        await axios.patch(`${URL_BASE}/personas/${personaElegida}`, {
+            sugerencia: inputSugerencia.value
+        });
+        
+        alert("¡Sugerencia guardada con éxito!");
+        await cargarSugerencia(personaElegida);
+
+    } catch (error) {
+        console.error("Error al guardar la sugerencia:", error);
+    }
+});
 
 /* ---------- PASO 6: borrar un registro ----------
    - axios.delete(".../historial/" + id) y después recargar (PASO 3).

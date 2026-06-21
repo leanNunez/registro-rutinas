@@ -7,7 +7,7 @@
       "peso": 64,
       "estatura": 1.68,
       "objetivo": "Ganar fuerza",
-      "sugerencia": "Subir 2.5 kg en sentadilla la próxima semana."
+      "sugerencia": "SUBIR PESO"
     },
     {
       "id": "2",
@@ -16,7 +16,7 @@
       "peso": 82,
       "estatura": 1.81,
       "objetivo": "Bajar grasa",
-      "sugerencia": ""
+      "sugerencia": "subir peso"
     }
   ],
   "rutinas": [
@@ -131,24 +131,14 @@
   ],
   "historial": [
     {
-      "personaId": "2",
-      "rutinaId": "Sin rutinas",
-      "ejercicio": "culito",
-      "peso": "1444",
-      "repeticiones": "",
-      "dificultad": "fácil",
-      "fecha": "18/6/2026",
-      "id": "kiWwP5QVpfM"
-    },
-    {
       "personaId": "1",
       "rutinaId": "8",
-      "ejercicio": "pechito",
-      "peso": "14",
-      "repeticiones": "5",
+      "ejercicio": "",
+      "peso": "",
+      "repeticiones": "",
       "dificultad": "fácil",
-      "fecha": "18/6/2026",
-      "id": "9IBgLQy9tQ8"
+      "fecha": "21/6/2026",
+      "id": "gDHhyUI5oZ8"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
