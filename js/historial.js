@@ -289,7 +289,7 @@ formularioSugerencia.addEventListener("submit", async (e) => {
         await axios.patch(`${URL_BASE}/personas/${personaElegida}`, {
             sugerencia: inputSugerencia.value
         });
-        
+
         alert("¡Sugerencia guardada con éxito!");
         await cargarSugerencia(personaElegida);
 
