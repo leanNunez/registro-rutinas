@@ -2,8 +2,9 @@
    Vas a necesitar recordar el id de la persona elegida y el de la rutina elegida.
    Consejo: declará  let personaElegida  y  let rutinaElegida  arriba de todo.
 */
-let personaElegida = null;
-let rutinaElegida = null;
+let personaElegida  = null;
+let rutinaElegida   = null;
+let rutinaEditando  = null; // null = modo crear | id = modo editar
 
 /* ---------- PASO 1: llenar el selector de personas ----------
    - Traé las personas con axios.get(".../personas").
@@ -95,13 +96,16 @@ const mostrarRutina = async (id) => {
       const divRutina = document.createElement("div");
       divRutina.textContent = `Nombre Rutina: ${rutina.nombre} - Días: ${rutina.dias.join(", ")}`;
 
+      const botonEditar = document.createElement("button");
+      botonEditar.textContent = "Editar";
+      botonEditar.addEventListener("click", () => activarModoEdicion(rutina));
+
       const botonBorrar = document.createElement("button");
       botonBorrar.textContent = "Borrar";
-      botonBorrar.addEventListener("click", () => {
-         borrarRutina(rutina.id);
-      });
+      botonBorrar.addEventListener("click", () => borrarRutina(rutina.id));
 
       listaRutinas.appendChild(divRutina);
+      listaRutinas.appendChild(botonEditar);
       listaRutinas.appendChild(botonBorrar);
    })
 
@@ -133,6 +137,31 @@ const mostrarRutina = async (id) => {
    }
 }
 
+/* ---------- PASO 3B: modo edición de rutina ----------
+   activarModoEdicion: pre-llena el formulario con los datos de la rutina
+   elegida y cambia el botón a "Guardar cambios".
+
+   desactivarModoEdicion: resetea el formulario y vuelve al modo creación.
+*/
+const activarModoEdicion = (rutina) => {
+   rutinaEditando = rutina.id;
+   document.getElementById("rutina-nombre").value = rutina.nombre;
+   document.querySelectorAll("#formulario-rutina input[name=dia]").forEach(cb => {
+      cb.checked = rutina.dias.includes(cb.value);
+   });
+   document.querySelector("#formulario-rutina button[type=submit]").textContent = "Guardar cambios";
+   document.getElementById("btn-cancelar-edicion").style.display = "inline-block";
+};
+
+const desactivarModoEdicion = () => {
+   rutinaEditando = null;
+   document.getElementById("formulario-rutina").reset();
+   document.querySelector("#formulario-rutina button[type=submit]").textContent = "Agregar rutina";
+   document.getElementById("btn-cancelar-edicion").style.display = "none";
+};
+
+document.getElementById("btn-cancelar-edicion").addEventListener("click", desactivarModoEdicion);
+
 /* ---------- PASO 4: crear una rutina ----------
    - Escuchá el "submit" del #formulario-rutina (addEventListener).
    - Hacé evento.preventDefault() para que no se recargue la página.
@@ -155,17 +184,20 @@ document.getElementById("formulario-rutina").addEventListener("submit", async (e
    document.querySelectorAll("#formulario-rutina input[name=dia]:checked").forEach(check => {
       dias.push(check.value);
    });
-   // 4. Mandamos la rutina nueva al servidor
-   await axios.post("http://localhost:3000/rutinas", {
-      personaId: personaElegida,
-      nombre: nombre,
-      dias: dias
-   });
+   // 4. Crear o modificar según el modo activo
+   if (rutinaEditando) {
+      await axios.patch(`http://localhost:3000/rutinas/${rutinaEditando}`, { nombre, dias });
+      desactivarModoEdicion(); // limpia el form y resetea el modo
+   } else {
+      await axios.post("http://localhost:3000/rutinas", {
+         personaId: personaElegida,
+         nombre: nombre,
+         dias: dias
+      });
+      document.getElementById("formulario-rutina").reset();
+   }
 
-   // 5. Limpiamos el formulario (vuelve a quedar vacío)
-   document.getElementById("formulario-rutina").reset();
-
-   // 6. Volvemos a mostrar la lista de rutinas, ya actualizada
+   // 5. Recarga la lista de rutinas actualizada
    mostrarRutina(personaElegida);
 });
 
@@ -341,7 +373,8 @@ document.getElementById("formulario-persona").addEventListener("submit", async (
       peso     : peso,
       estatura : estatura,
       objetivo : objetivo,
-      sugerencia: ""   // empieza vacío, se llena desde historial
+      sugerencia:    "",  // se llena desde historial
+      dificultades:  ""   // se llena desde historial
    });
 
    // Limpiamos el formulario
