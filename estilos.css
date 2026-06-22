@@ -755,3 +755,58 @@ form button[type="submit"] {
     animation: none !important;
   }
 }
+
+
+/* Modal para personalizar el alert en historial*/
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-overlay.activo {
+  display: flex;
+}
+
+.modal-caja {
+  background: var(--carbon-medio);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra);
+  padding: 1.75rem;
+  max-width: 360px;
+  width: 90%;
+  text-align: center;
+}
+
+.modal-mensaje {
+  color: var(--texto);
+  font-size: 0.95rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+.modal-boton-ok {
+  background: var(--naranja);
+  color: var(--blanco);
+  border: 1px solid var(--naranja);
+  border-radius: var(--radio-sm);
+  padding: 0.6rem 2rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all var(--transicion);
+}
+
+.modal-boton-ok:hover {
+  background: var(--naranja-suave);
+  border-color: var(--naranja-suave);
+  box-shadow: var(--sombra-naranja);
+  transform: translateY(-1px);
+}

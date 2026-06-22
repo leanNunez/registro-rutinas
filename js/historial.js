@@ -1,13 +1,3 @@
-/* ============================================================
-   historial.js -- Hace funcionar la página historial.html
-   Mismas herramientas que crear-rutina.js (Axios + DOM).
-   Abajo está el plan de lo que hay que hacer.
-   ============================================================ */
-
-
-/* ---------- PASO 0: variable de persona elegida ----------
-   let personaElegida  (y opcional: let rutinaElegida para etiquetar registros).
-*/
 const URL_BASE = "http://localhost:3000";
 
 // Variables globales para mantener el estado
@@ -23,12 +13,24 @@ const resumenDiv = document.getElementById("resumen");
 const formularioSugerencia = document.getElementById("formulario-sugerencia");
 const inputSugerencia = document.getElementById("texto-sugerencia");
 
+
+// Funcion para mostrar el alert personalizado
+function mostrarModal(mensaje) {
+    const overlay = document.getElementById("modal-overlay");
+    const texto = document.getElementById("modal-mensaje");
+    texto.textContent = mensaje;
+    overlay.classList.add("activo");
+}
+
+document.getElementById("modal-boton-ok").addEventListener("click", () => {
+    document.getElementById("modal-overlay").classList.remove("activo");
+});
+
+
 /* ---------- PASO 1: llenar el selector de personas ----------
    Igual que en crear-rutina.js: axios.get(".../personas"), recorrer y crear <option>.
    Al final, elegir la primera y cargar su historial (PASO 3).
 */
-
-// Función para cargar personas en el select
 async function cargarPersonas() {
     try {
         const respuesta = await axios.get(`${URL_BASE}/personas`);
@@ -70,21 +72,17 @@ async function cargarPersonas() {
      (igual que se hace con #selector-rutina en crear-rutina.js).
    - Cargá el historial (PASO 3).
 */
-
-// Función para cargar rutinas de la persona seleccionada y Asegúra de normalizar el personaId aquí:
 async function cargarRutinasParaHistorial(idPersona) {
     try {
         // Obtenemos todas las rutinas
         const respuesta = await axios.get(`${URL_BASE}/rutinas`);
         const todasLasRutinas = respuesta.data;
-        
+
         // Filtramos usando String() para comparar texto con texto
         const rutinas = todasLasRutinas.filter(r => String(r.personaId) === String(idPersona));
 
-        console.log("Rutinas filtradas:", rutinas); 
-        
         selectorRutinaHistorial.innerHTML = "";
-        
+
         if (rutinas.length === 0) {
             selectorRutinaHistorial.innerHTML = '<option>Sin rutinas</option>';
             return;
@@ -106,20 +104,19 @@ async function cargarSugerencia(idPersona) {
         const respuesta = await axios.get(`${URL_BASE}/personas/${idPersona}`);
         const persona = respuesta.data;
         // Asignamos la sugerencia actual al textarea
-        inputSugerencia.value = persona.sugerencia || ""; 
+        inputSugerencia.value = persona.sugerencia || "";
     } catch (error) {
         console.error("Error al cargar sugerencia:", error);
     }
 }
 
-//Al cambiar de persona, se actualizan las rutinas disponibles y el historial
+// Al cambiar de persona, se actualizan rutinas, historial y sugerencia
 selectorPersona.addEventListener("change", async () => {
     personaElegida = String(selectorPersona.value ?? "").trim();
     await cargarRutinasParaHistorial(personaElegida);
     await cargarHistorial();
     await cargarSugerencia(personaElegida);
 });
-
 
 /* ---------- PASO 3: mostrar el historial + el resumen ----------
    - Traé los registros con axios.get(".../historial?personaId=" + personaElegida).
@@ -132,7 +129,7 @@ selectorPersona.addEventListener("change", async () => {
        c) Ejercicios que cuestan: los que tienen dificultad "alta".
      (son funciones simples: agrupar/ordenar/restar/filtrar)
 */
-async function cargarHistorial() {
+async function cargarHistorial(sugerencia = "") {
     if (!personaElegida) return;
 
     try {
@@ -151,13 +148,13 @@ async function cargarHistorial() {
             .sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
 
         dibujarLista(registros);
-        calcularResumen(registros);
+        calcularResumen(registros, sugerencia);
     } catch (error) {
         console.error("Error al cargar historial:", error);
     }
 }
 
-// --- FUNCIONES DE DIBUJO  ---
+// --- FUNCIONES DE DIBUJO ---
 function dibujarLista(registros) {
     const lista = document.getElementById("lista-historial");
     lista.innerHTML = "";
@@ -169,19 +166,18 @@ function dibujarLista(registros) {
 
     registros.forEach(reg => {
         const tarjeta = document.createElement("div");
-        tarjeta.className = "bloque";
+        tarjeta.className = "bloque tarjeta";
         tarjeta.innerHTML = `
             <p><strong>${reg.ejercicio}</strong></p>
             <p>Fecha: ${reg.fecha}</p>
             <p>Peso: ${reg.peso}kg | Reps: ${reg.repeticiones} | Dificultad: ${reg.dificultad}</p>
-            <button type="button" data-id="${reg.id}">Borrar</button>
+            <button type="button" class="btn-borrar" data-id="${reg.id}">Borrar</button>
         `;
         lista.appendChild(tarjeta);
     });
-
 }
 
-function calcularResumen(registros) {
+function calcularResumen(registros, sugerencia) {
     if (!resumenDiv) return;
 
     const total = registros.length;
@@ -209,41 +205,29 @@ function calcularResumen(registros) {
         <p><strong>Progreso de carga:</strong><br>${progreso || "Sin datos"}</p>
         <p><strong>Último cambio de rutina:</strong> ${ultimoCambioRutina}</p>
         <p><strong>Ejercicios que cuestan:</strong> ${ejerciciosDificiles || "Ninguno"}</p>
+        <p><strong>Próximo cambio sugerido:</strong> ${sugerencia || "Sin sugerencias por ahora"}</p>
     `;
 }
 
-// Cambio de persona
-selectorPersona.addEventListener("change", async () => {
-    personaElegida = String(selectorPersona.value ?? "").trim();
-    await cargarRutinasParaHistorial(personaElegida);
-    await cargarHistorial();
-});
-
-// Evento para BORRAR (Delegación de eventos)
-listaHistorial.addEventListener("click", async (e) => {
-    if (e.target.tagName === "BUTTON" && e.target.dataset.id) {
-        const idRegistro = e.target.dataset.id;
-        try {
-            await axios.delete(`${URL_BASE}/historial/${idRegistro}`);
-            await cargarHistorial(); 
-        } catch (error) {
-            console.error("Error al borrar:", error);
-        }
-    }
-});
-
-//Evento para REGISTRAR (El formulario)
+/* ---------- PASO 4: registrar un entrenamiento ----------
+   - Escuchá el "submit" del #formulario-registro, con evento.preventDefault().
+   - La fecha se pone sola:  new Date().toISOString().slice(0, 10)  -> "AAAA-MM-DD".
+   - Leé rutinaId del <select id="selector-rutina-historial"> (.value, convertilo con Number).
+   - Leé ejercicio, peso (Number), repeticiones (Number) y dificultad.
+   - axios.post(".../historial", { personaId, rutinaId, fecha, ejercicio, peso, repeticiones, dificultad }).
+   - Limpiá el formulario y volvé a cargar el historial (PASO 3).
+*/
 formularioRegistro.addEventListener("submit", async (e) => {
     e.preventDefault();
-    
+
     const nuevoRegistro = {
         personaId: selectorPersona.value,
-        rutinaId: selectorRutinaHistorial.value,
+        rutinaId: Number(selectorRutinaHistorial.value),
         ejercicio: document.getElementById("registro-ejercicio").value,
         peso: document.getElementById("registro-peso").value,
         repeticiones: document.getElementById("registro-repeticiones").value,
         dificultad: document.getElementById("registro-dificultad").value,
-        fecha: new Date().toLocaleDateString()
+        fecha: new Date().toISOString().slice(0, 10)
     };
 
     try {
@@ -255,43 +239,25 @@ formularioRegistro.addEventListener("submit", async (e) => {
     }
 });
 
-// --- ARRANQUE (Lo que enciende el motor) ---
-async function iniciar() {
-    await cargarPersonas();
-}
-
-iniciar();
-
-
-/* ---------- PASO 4: registrar un entrenamiento ----------
-   - Escuchá el "submit" del #formulario-registro, con evento.preventDefault().
-   - La fecha se pone sola:  new Date().toISOString().slice(0, 10)  -> "AAAA-MM-DD".
-   - Leé rutinaId del <select id="selector-rutina-historial"> (.value, convertilo con Number).
-   - Leé ejercicio, peso (Number), repeticiones (Number) y dificultad.
-   - axios.post(".../historial", { personaId, rutinaId, fecha, ejercicio, peso, repeticiones, dificultad }).
-   - Limpiá el formulario y volvé a cargar el historial (PASO 3).
-*/
-
-
 /* ---------- PASO 5: guardar la sugerencia ----------
-   - Escuchá el "submit" del #formulario-sugerencia.
+   - Escuchá el "click" del botón #btn-guardar-sugerencia.
    - Leé el texto del <textarea> y guardalo en la persona:
        axios.patch(".../personas/" + personaElegida, { sugerencia: texto }).
+   - Recargá la sugerencia y el resumen para reflejar el cambio.
 */
-
 formularioSugerencia.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    console.log("ID de persona:", personaElegida); // <--- MIRA LA CONSOLA
-    console.log("Valor sugerencia:", inputSugerencia.value); // <--- MIRA LA CONSOLA
-    console.log("El ID de la persona elegida es:", personaElegida);
+    const textoSugerencia = inputSugerencia.value;
+
     try {
         await axios.patch(`${URL_BASE}/personas/${personaElegida}`, {
-            sugerencia: inputSugerencia.value
+            sugerencia: textoSugerencia
         });
 
-        alert("¡Sugerencia guardada con éxito!");
+        mostrarModal("¡Sugerencia guardada con éxito!");
         await cargarSugerencia(personaElegida);
+        await cargarHistorial(textoSugerencia);
 
     } catch (error) {
         console.error("Error al guardar la sugerencia:", error);
@@ -301,3 +267,21 @@ formularioSugerencia.addEventListener("submit", async (e) => {
 /* ---------- PASO 6: borrar un registro ----------
    - axios.delete(".../historial/" + id) y después recargar (PASO 3).
 */
+listaHistorial.addEventListener("click", async (e) => {
+    if (e.target.tagName === "BUTTON" && e.target.dataset.id) {
+        const idRegistro = e.target.dataset.id;
+        try {
+            await axios.delete(`${URL_BASE}/historial/${idRegistro}`);
+            await cargarHistorial();
+        } catch (error) {
+            console.error("Error al borrar:", error);
+        }
+    }
+});
+
+// --- ARRANQUE (Lo que enciende el motor) ---
+async function iniciar() {
+    await cargarPersonas();
+}
+
+iniciar();
