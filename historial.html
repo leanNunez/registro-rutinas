@@ -14,82 +14,120 @@
     <div class="barra__enlaces">
       <a href="index.html">Inicio</a>
       <a href="crear-rutina.html">Crear rutina</a>
-      <a href="historial.html">Historial</a>
+      <a href="historial.html" class="activo">Historial</a>
     </div>
   </nav>
 
-  <main class="pagina">
-    <h1>Historial y progreso</h1>
-    <p>Seguimiento de cargas, cambios de rutina y próximos pasos.</p>
+  <main class="pagina pagina--dos-columnas">
 
-    <!-- ===== 1) ELEGIR PERSONA ===== -->
-    <section class="bloque">
-      <label for="selector-persona">Persona</label>
-      <select id="selector-persona"></select>
-    </section>
+    <!-- ===== COLUMNA IZQUIERDA: persona + resumen + sugerencia ===== -->
+    <div class="pagina__izquierda">
+      <h1>Historial</h1>
+      <p>Seguimiento de cargas, cambios de rutina y próximos pasos.</p>
 
-    <!-- ===== 2) RESUMEN (se calcula con el historial) =====
-          El JS escribe acá las métricas: progreso de carga, último cambio de
-          rutina y ejercicios que cuestan. -->
-    <section class="bloque">
-      <h2>Resumen</h2>
-      <div id="resumen"></div>
-    </section>
+      <!-- 1) ELEGIR PERSONA -->
+      <section class="bloque">
+        <label for="selector-persona">Persona</label>
+        <select id="selector-persona"></select>
+      </section>
 
-    <!-- ===== 3) PRÓXIMOS CAMBIOS SUGERIDOS (texto editable) =====
-          Es un texto que escribe el entrenador y se guarda en la persona. -->
-    <section class="bloque">
-      <h2>Próximos cambios sugeridos</h2>
-      <form id="formulario-sugerencia">
-        <textarea id="texto-sugerencia"></textarea>
-        <button type="submit">Guardar sugerencia</button>
-      </form>
-    </section>
+      <!-- 2) RESUMEN: el JS escribe las métricas acá -->
+      <section class="bloque">
+        <h2>Resumen</h2>
+        <div id="resumen"></div>
+      </section>
 
-    <!-- ===== 4) REGISTRAR UN ENTRENAMIENTO =====
-          Cada registro guarda: ejercicio, peso, repeticiones y dificultad.
-          La fecha se pone sola (la pone el JS). -->
-    <section class="bloque">
-      <h2>Registrar entrenamiento</h2>
-      <form id="formulario-registro">
-        <label for="selector-rutina-historial">Rutina</label>
-        <select id="selector-rutina-historial"></select>
+      <!-- 3) SUGERENCIA DEL ENTRENADOR -->
+      <section class="bloque">
+        <h2>Próximos cambios sugeridos</h2>
+        <form id="formulario-sugerencia">
+          <textarea id="texto-sugerencia" placeholder="Ej: subir 2.5 kg en sentadilla..."></textarea>
+          <button type="submit">Guardar sugerencia</button>
+        </form>
+      </section>
+    </div>
 
-        <label for="registro-ejercicio">Ejercicio</label>
-        <input type="text" id="registro-ejercicio" maxlength="35"/>
+    <!-- ===== COLUMNA CENTRAL: tabs ===== -->
+    <div class="pagina__derecha">
+      <div class="tabs">
 
-        <label for="registro-peso">Peso (kg)</label>
-        <input type="number" id="registro-peso" placeholder="80" />
+        <!-- Botones de navegación -->
+        <div class="tabs__nav">
+          <button type="button" class="tabs__btn tabs__btn--activo" data-tab="registrar">Registrar</button>
+          <button type="button" class="tabs__btn" data-tab="registros">Registros</button>
+        </div>
 
-        <label for="registro-repeticiones">Repeticiones</label>
-        <input type="number" id="registro-repeticiones" placeholder="5" />
+        <!-- PANEL: REGISTRAR ENTRENAMIENTO -->
+        <div class="tabs__panel bloque activo" id="tab-registrar">
+          <h2>Registrar entrenamiento</h2>
+          <p>Seleccioná la rutina para ver sus ejercicios y registrar la sesión.</p>
 
-        <label for="registro-dificultad">Dificultad</label>
-        <select id="registro-dificultad">
-          <option value="fácil">Fácil</option>
-          <option value="media">Media</option>
-          <option value="alta">Alta</option>
-        </select>
+          <form id="formulario-registro">
+            <label for="selector-rutina-historial">Rutina</label>
+            <select id="selector-rutina-historial"></select>
 
-        <button type="submit">Registrar</button>
-      </form>
-    </section>
+            <label for="registro-ejercicio">Ejercicio</label>
+            <input type="text" id="registro-ejercicio" placeholder="Ej: Sentadilla" maxlength="35" />
 
-    <!-- ===== 5) LISTA DE REGISTROS ===== -->
-    <section class="bloque">
-      <h2>Registros</h2>
-      <div id="lista-historial"></div>
-    </section>
+            <label for="registro-peso">Peso (kg)</label>
+            <input type="number" id="registro-peso" placeholder="80" />
+
+            <label for="registro-repeticiones">Repeticiones</label>
+            <input type="number" id="registro-repeticiones" placeholder="5" />
+
+            <label for="registro-dificultad">Dificultad</label>
+            <select id="registro-dificultad">
+              <option value="fácil">Fácil</option>
+              <option value="media">Media</option>
+              <option value="alta">Alta</option>
+            </select>
+
+            <button type="submit">Registrar</button>
+          </form>
+        </div>
+
+        <!-- PANEL: LISTA DE REGISTROS -->
+        <div class="tabs__panel bloque" id="tab-registros">
+          <h2>Registros</h2>
+          <div id="lista-historial"></div>
+        </div>
+
+      </div><!-- /tabs -->
+    </div><!-- /pagina__derecha -->
+
+    <!-- ===== COLUMNA DERECHA: preview de la rutina seleccionada ===== -->
+    <div class="pagina__preview">
+      <p class="preview__titulo">Rutina actual</p>
+
+      <!-- Tarjeta que muestra los datos de la rutina seleccionada en el selector -->
+      <div class="tarjeta-preview">
+
+        <!-- Nombre de la rutina -->
+        <div id="preview-rutina-nombre" class="tarjeta-preview__nombre vacio-nombre">Sin rutina</div>
+
+        <!-- Pills de días -->
+        <div id="preview-rutina-dias" class="tarjeta-preview__dias"></div>
+
+        <!-- Ejercicios de la rutina -->
+        <div class="tarjeta-preview__separador"></div>
+        <div id="preview-rutina-ejercicios" class="tarjeta-preview__ejercicios">
+          <p class="vacio">Sin ejercicios</p>
+        </div>
+
+      </div>
+    </div><!-- /pagina__preview -->
 
   </main>
-    <div class="modal-overlay" id="modal-overlay">
+
+  <div class="modal-overlay" id="modal-overlay">
     <div class="modal-caja">
-    <p class="modal-mensaje" id="modal-mensaje"></p>
-    <button type="button" class="modal-boton-ok" id="modal-boton-ok">Aceptar</button>
-   </div>
-</div>
+      <p class="modal-mensaje" id="modal-mensaje"></p>
+      <button type="button" class="modal-boton-ok" id="modal-boton-ok">Aceptar</button>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1/dist/axios.min.js"></script>
+  <script src="js/tabs.js"></script>
   <script src="js/historial.js"></script>
 </body>
 </html>

@@ -1,16 +1,19 @@
 /* ============================================================
-   historial.js — Página de historial de entrenamientos.
-   Mismas herramientas que crear-rutina.js: Axios + DOM vanilla.
+    historial.js — Página de historial de entrenamientos.
+    Mismas herramientas que crear-rutina.js: Axios + DOM vanilla.
    ============================================================ */
 
 const URL_BASE = "http://localhost:3000";
 
 /* ---------- PASO 0: estado global y referencias al DOM ----------
-   personaElegida: guarda el id de la persona activa entre funciones.
-   Las referencias al DOM se capturan una sola vez para no repetir
-   getElementById / querySelector en cada función.
+    personaElegida: id de la persona activa entre funciones.
+    rutinasDisponibles: array con las rutinas de la persona activa,
+    guardado en memoria para no hacer un GET extra al cambiar de rutina.
+    Las referencias al DOM se capturan una sola vez para no repetir
+    getElementById / querySelector en cada función.
 */
-let personaElegida = null;
+let personaElegida      = null;
+let rutinasDisponibles  = [];
 
 const formularioRegistro        = document.getElementById("formulario-registro");
 const selectorPersona           = document.getElementById("selector-persona");
@@ -21,9 +24,9 @@ const formularioSugerencia      = document.getElementById("formulario-sugerencia
 const inputSugerencia           = document.getElementById("texto-sugerencia");
 
 /* ---------- PASO 0B: modal de confirmación ----------
-   Reemplaza el alert() nativo del navegador con un modal propio.
-   mostrarModal(mensaje): inyecta el texto y activa la clase "activo".
-   El botón Aceptar la cierra removiendo esa clase.
+    Reemplaza el alert() nativo del navegador con un modal propio.
+    mostrarModal(mensaje): inyecta el texto y activa la clase "activo".
+    El botón Aceptar la cierra removiendo esa clase.
 */
 function mostrarModal(mensaje) {
     const overlay = document.getElementById("modal-overlay");
@@ -38,9 +41,9 @@ document.getElementById("modal-boton-ok").addEventListener("click", () => {
 
 
 /* ---------- PASO 1: llenar el selector de personas ----------
-   - GET /personas → crea un <option> por persona en #selector-persona.
-   - Elige la primera por defecto y dispara en cadena:
-     cargarRutinasParaHistorial → cargarHistorial → cargarSugerencia.
+    - GET /personas → crea un <option> por persona en #selector-persona.
+    - Elige la primera por defecto y dispara en cadena:
+        cargarRutinasParaHistorial → cargarHistorial → cargarSugerencia.
 */
 async function cargarPersonas() {
     try {
@@ -75,15 +78,15 @@ async function cargarPersonas() {
 
 
 /* ---------- PASO 2: cambio de persona ----------
-   cargarRutinasParaHistorial: GET /rutinas → filtra por personaId y
-   llena #selector-rutina-historial con las rutinas de la persona activa.
-   Se filtra con String() para evitar problemas de tipo (1 vs "1").
+    cargarRutinasParaHistorial: GET /rutinas → filtra por personaId y
+    llena #selector-rutina-historial con las rutinas de la persona activa.
+    Se filtra con String() para evitar problemas de tipo (1 vs "1").
 
-   cargarSugerencia: GET /personas/:id → muestra la sugerencia guardada
-   en el <textarea #texto-sugerencia>.
+    cargarSugerencia: GET /personas/:id → muestra la sugerencia guardada
+    en el <textarea #texto-sugerencia>.
 
-   El listener de #selector-persona actualiza personaElegida y llama
-   a las dos funciones anteriores + recarga el historial.
+    El listener de #selector-persona actualiza personaElegida y llama
+    a las dos funciones anteriores + recarga el historial.
 */
 async function cargarRutinasParaHistorial(idPersona) {
     try {
@@ -107,6 +110,10 @@ async function cargarRutinasParaHistorial(idPersona) {
             opcion.textContent = rutina.nombre;
             selectorRutinaHistorial.appendChild(opcion);
         });
+
+        // Guarda las rutinas en memoria y muestra la primera en el preview
+        rutinasDisponibles = rutinas;
+        await cargarEjerciciosRutina(rutinas[0].id);
     } catch (error) {
         console.error("Error al cargar rutinas:", error);
     }
@@ -127,23 +134,90 @@ selectorPersona.addEventListener("change", async () => {
     await cargarRutinasParaHistorial(personaElegida);
     await cargarHistorial();
     await cargarSugerencia(personaElegida);
+    // El preview se actualiza dentro de cargarRutinasParaHistorial con la primera rutina
+});
+
+// Al cambiar de rutina en el selector, actualiza el preview con sus ejercicios
+selectorRutinaHistorial.addEventListener("change", async () => {
+    await cargarEjerciciosRutina(selectorRutinaHistorial.value);
 });
 
 
+/* ---------- PASO 2B: preview de la rutina seleccionada ----------
+    cargarEjerciciosRutina: busca la rutina en rutinasDisponibles (sin
+    request extra), luego GET /ejercicios?rutinaId=X y delega el dibujo
+    a dibujarPreviewRutina.
+
+    dibujarPreviewRutina: actualiza la tarjeta de la columna derecha con:
+      · Nombre de la rutina en #preview-rutina-nombre
+      · Un pill por cada día en #preview-rutina-dias
+      · Un ítem por ejercicio en #preview-rutina-ejercicios
+        mostrando nombre, series × reps y descanso.
+*/
+async function cargarEjerciciosRutina(rutinaId) {
+    const rutina = rutinasDisponibles.find(r => String(r.id) === String(rutinaId));
+    if (!rutina) return;
+
+    try {
+        const respuesta  = await axios.get(`${URL_BASE}/ejercicios?rutinaId=${rutinaId}`);
+        const ejercicios = respuesta.data;
+        dibujarPreviewRutina(rutina, ejercicios);
+    } catch (error) {
+        console.error("Error al cargar ejercicios de la rutina:", error);
+    }
+}
+
+function dibujarPreviewRutina(rutina, ejercicios) {
+    const nombre     = document.getElementById("preview-rutina-nombre");
+    const diasDiv    = document.getElementById("preview-rutina-dias");
+    const ejercDiv   = document.getElementById("preview-rutina-ejercicios");
+
+    // Nombre
+    nombre.textContent = rutina.nombre || "Sin nombre";
+    nombre.classList.toggle("vacio-nombre", !rutina.nombre);
+
+    // Pills de días
+    diasDiv.innerHTML = "";
+    (rutina.dias || []).forEach(dia => {
+        const pill       = document.createElement("span");
+        pill.className   = "preview-dia";
+        pill.textContent = dia;
+        diasDiv.appendChild(pill);
+    });
+
+    // Lista de ejercicios
+    ejercDiv.innerHTML = "";
+    if (ejercicios.length === 0) {
+        ejercDiv.innerHTML = '<p class="vacio">Sin ejercicios aún</p>';
+        return;
+    }
+
+    ejercicios.forEach(ej => {
+        const item       = document.createElement("div");
+        item.className   = "preview-ejercicio";
+        item.innerHTML   = `
+            <strong>${ej.nombre}</strong>
+            <span>${ej.series} series × ${ej.repeticiones} reps · ${ej.descanso}</span>
+        `;
+        ejercDiv.appendChild(item);
+    });
+}
+
+
 /* ---------- PASO 3: mostrar historial y resumen ----------
-   cargarHistorial: GET /historial → normaliza todos los campos a String
-   para evitar inconsistencias de tipo, filtra por personaElegida y
-   ordena del registro más nuevo al más viejo (por id descendente).
-   Delega el pintado a dibujarLista y calcularResumen.
+    cargarHistorial: GET /historial → normaliza todos los campos a String
+    para evitar inconsistencias de tipo, filtra por personaElegida y
+    ordena del registro más nuevo al más viejo (por id descendente).
+    Delega el pintado a dibujarLista y calcularResumen.
 
-   dibujarLista: vacía #lista-historial y crea una tarjeta por registro
-   con ejercicio, fecha, peso, reps, dificultad y botón Borrar.
+    dibujarLista: vacía #lista-historial y crea una tarjeta por registro
+    con ejercicio, fecha, peso, reps, dificultad y botón Borrar.
 
-   calcularResumen: en #resumen muestra cuatro métricas calculadas:
-     · Progreso de carga por ejercicio (primer peso → último peso).
-     · Última rutina registrada.
-     · Ejercicios con dificultad "alta".
-     · Sugerencia del entrenador (llega como parámetro desde PASO 5).
+    calcularResumen: en #resumen muestra cuatro métricas calculadas:
+        · Progreso de carga por ejercicio (primer peso → último peso).
+        · Última rutina registrada.
+        · Ejercicios con dificultad "alta".
+        · Sugerencia del entrenador (llega como parámetro desde PASO 5).
 */
 async function cargarHistorial(sugerencia = "") {
     if (!personaElegida) return;
@@ -223,9 +297,9 @@ function calcularResumen(registros, sugerencia) {
 
 
 /* ---------- PASO 4: registrar un entrenamiento ----------
-   Submit de #formulario-registro: recoge todos los campos del formulario,
-   genera la fecha de hoy automáticamente con toISOString y hace POST
-   /historial. Luego limpia el formulario y recarga el historial.
+    Submit de #formulario-registro: recoge todos los campos del formulario,
+    genera la fecha de hoy automáticamente con toISOString y hace POST
+    /historial. Luego limpia el formulario y recarga el historial.
 */
 formularioRegistro.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -251,10 +325,10 @@ formularioRegistro.addEventListener("submit", async (e) => {
 
 
 /* ---------- PASO 5: guardar sugerencia del entrenador ----------
-   Submit de #formulario-sugerencia: PATCH /personas/:id con el texto
-   del textarea. Muestra el modal de confirmación y recarga el historial
-   pasándole la sugerencia para que aparezca en el resumen al instante.
-*/
+    Submit de #formulario-sugerencia: PATCH /personas/:id con el texto
+    del textarea. Muestra el modal de confirmación y recarga el historial
+    pasándole la sugerencia para que aparezca en el resumen al instante.
+    */
 formularioSugerencia.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -276,9 +350,9 @@ formularioSugerencia.addEventListener("submit", async (e) => {
 
 
 /* ---------- PASO 6: borrar un registro ----------
-   Click delegation en #lista-historial: detecta el botón Borrar por
-   data-id, hace DELETE /historial/:id y recarga la lista.
-   Usar delegation evita agregar N listeners, uno por cada tarjeta.
+    Click delegation en #lista-historial: detecta el botón Borrar por
+    data-id, hace DELETE /historial/:id y recarga la lista.
+    Usar delegation evita agregar N listeners, uno por cada tarjeta.
 */
 listaHistorial.addEventListener("click", async (e) => {
     if (e.target.tagName !== "BUTTON" || !e.target.dataset.id) return;
@@ -294,8 +368,8 @@ listaHistorial.addEventListener("click", async (e) => {
 
 
 /* ---------- ARRANQUE ----------
-   iniciar() llama a cargarPersonas(), que al terminar dispara el resto
-   en cadena. Es el único punto de entrada del módulo.
+    iniciar() llama a cargarPersonas(), que al terminar dispara el resto
+    en cadena. Es el único punto de entrada del módulo.
 */
 async function iniciar() {
     await cargarPersonas();
