@@ -34,11 +34,13 @@ const cargarPersonas = async () => {
 }
 
 /* ---------- PASO 2: mostrar los datos de la persona ----------
-   - Cuando cambia el <select> (addEventListener "change"), guardá personaElegida.
-   - Traé la persona con axios.get(".../personas/" + personaElegida).
-   - Escribí sus datos dentro de #datos-persona (peso, estatura, objetivo).
+   - Traé la persona con axios.get(".../personas/" + id).
+   - Vaciá #datos-persona y escribí peso, estatura, objetivo e IMC.
    - Extra: el IMC se calcula con  peso / (estatura * estatura).
-   - Después de mostrar los datos, cargá sus rutinas (PASO 3) y su dieta (PASO 6).
+   - Al terminar, llamá a mostrarRutina(id): ella se encarga de cargar
+      las rutinas, los ejercicios y la dieta de la primera rutina (PASO 3).
+   - OJO: ya no llamamos MostrarDieta acá — la dieta pertenece a la rutina,
+      no a la persona, así que se carga desde mostrarRutina.
 */
 const mostrarDatosPersona = async (id) => {
    const respuesta = await axios.get("http://localhost:3000/personas/" + id);
@@ -64,15 +66,24 @@ const mostrarDatosPersona = async (id) => {
    parrafoImc.textContent = `IMC : ${imc}`;
    datosPersona.appendChild(parrafoImc);
    mostrarRutina(id);
-   MostrarDieta(id);
+   // la dieta ahora pertenece a la rutina, no a la persona — se carga desde mostrarRutina
 }
 
 /* ---------- PASO 3: mostrar las rutinas de la persona ----------
-   - Traé las rutinas con axios.get(".../rutinas?personaId=" + personaElegida).
-   - Vaciá #lista-rutinas (innerHTML = "").
-   - Recorré con forEach y por cada rutina creá una tarjeta (un <div>) con el
-   nombre y los días. Agregale un botón "Borrar" (PASO 5).
-   - También llená el <select id="selector-rutina"> con estas rutinas (para los ejercicios).
+   - Traé las rutinas con axios.get(".../rutinas?personaId=" + id).
+   - Vaciá #lista-rutinas y dibujá una tarjeta con botón "Borrar" por cada rutina (PASO 5).
+   - Llenás también el <select id="selector-rutina"> con las mismas rutinas (para los ejercicios).
+   - Si hay al menos una rutina:
+         · Guardás rutinaElegida = rutinas[0].id (la primera queda seleccionada).
+         · Llamás mostrarEjercicios(rutinaElegida) para cargar sus ejercicios (PASO 6).
+         · Llamás MostrarDieta(rutinaElegida) para cargar su dieta (PASO 7).
+         · Disparás un evento "change" en #selector-rutina para que preview-rutina.js
+         actualice el nombre en la tarjeta de vista previa.
+   - Si NO hay rutinas (else):
+         · Limpiás #lista-ejercicios y #lista-dieta para que los MutationObservers
+         de preview-rutina.js limpien la vista previa automáticamente.
+         · Disparás el mismo "change" en el selector vacío para que la vista previa
+         resetee el nombre a "Sin nombre".
 */
 const mostrarRutina = async (id) => {
    const respuesta = await axios.get("http://localhost:3000/rutinas?personaId=" + id);
@@ -105,10 +116,20 @@ const mostrarRutina = async (id) => {
       selectorRutina.appendChild(option);
    })
 
-   // Si hay al menos una rutina, elegimos la primera y mostramos sus ejercicios
+   // Si hay al menos una rutina, elegimos la primera y cargamos ejercicios y dieta
    if (rutinas.length > 0) {
       rutinaElegida = rutinas[0].id;
       mostrarEjercicios(rutinaElegida);
+      MostrarDieta(rutinaElegida);
+      // dispara "change" para que preview-rutina.js actualice el nombre en la tarjeta
+      document.getElementById("selector-rutina").dispatchEvent(new Event("change"));
+   } else {
+      // sin rutinas: limpiamos las listas para que los MutationObservers limpien el preview
+      rutinaElegida = null;
+      document.getElementById("lista-ejercicios").innerHTML = "";
+      document.getElementById("lista-dieta").innerHTML = "";
+      // selector vacío → el listener en preview-rutina.js pondrá "Sin nombre"
+      document.getElementById("selector-rutina").dispatchEvent(new Event("change"));
    }
 }
 
@@ -122,19 +143,19 @@ const mostrarRutina = async (id) => {
    - Limpiá el formulario (.reset()) y volvé a mostrar las rutinas (PASO 3).
 */
 document.getElementById("formulario-rutina").addEventListener("submit", async (evento) => {
-  // 1. Frenamos que la página se recargue sola al enviar el form
+   // 1. Frenamos que la página se recargue sola al enviar el form
    evento.preventDefault();
 
-  // 2. Leemos el nombre que escribió el usuario
+   // 2. Leemos el nombre que escribió el usuario
    const nombre = document.getElementById("rutina-nombre").value;
 
-  // 3. Armamos el array de días tildados
+   // 3. Armamos el array de días tildados
    const dias = [];
    //seleccionamos el formulario por su id con #, luego traemos todos los imputs con el nombre = dia, pero con :checked solo tramemos los que esten seleccionados
    document.querySelectorAll("#formulario-rutina input[name=dia]:checked").forEach(check => {
       dias.push(check.value);
    });
-// 4. Mandamos la rutina nueva al servidor
+   // 4. Mandamos la rutina nueva al servidor
    await axios.post("http://localhost:3000/rutinas", {
       personaId: personaElegida,
       nombre: nombre,
@@ -186,15 +207,69 @@ const mostrarEjercicios = async (id) => {
    })
 }
 
-/* ---------- PASO 7: dieta ----------
-   Otra vez el mismo patrón:
-   - Mostrar: axios.get(".../dietas?personaId=" + personaElegida).
-   - Crear:   axios.post(".../dietas", { personaId, momento, descripcion }).
-   - Borrar:  axios.delete(".../dietas/" + id).
+/* ---------- PASO 6b: borrar un ejercicio ----------
+   - Recibís el id del ejercicio a borrar.
+   - Hacé axios.delete(".../ejercicios/" + id).
+   - Recargá la lista llamando mostrarEjercicios(rutinaElegida).
+*/
+const borrarEjercicio = async (id) => {
+   await axios.delete("http://localhost:3000/ejercicios/" + id);
+   mostrarEjercicios(rutinaElegida);
+};
+
+/* ---------- PASO 6c: crear un ejercicio ----------
+   - Escuchá el "submit" del #formulario-ejercicio (addEventListener).
+   - Hacé evento.preventDefault() para que no se recargue la página.
+   - Leé nombre, series, repeticiones y descanso.
+   - OJO: series y repeticiones son números → convertílos con Number().
+   - Creá el ejercicio con axios.post(".../ejercicios", { rutinaId, nombre, series, repeticiones, descanso }).
+   - Limpiá el formulario (.reset()) y recargá la lista (PASO 6).
+*/
+document.getElementById("formulario-ejercicio").addEventListener("submit", async (evento) => {
+   evento.preventDefault();
+
+   const nombre        = document.getElementById("ejercicio-nombre").value;
+   const series        = Number(document.getElementById("ejercicio-series").value);
+   const repeticiones  = Number(document.getElementById("ejercicio-repeticiones").value);
+   const descanso      = document.getElementById("ejercicio-descanso").value;
+
+   await axios.post("http://localhost:3000/ejercicios", {
+      rutinaId: rutinaElegida,
+      nombre,
+      series,
+      repeticiones,
+      descanso
+   });
+
+   document.getElementById("formulario-ejercicio").reset();
+   mostrarEjercicios(rutinaElegida);
+});
+
+/* ---------- PASO 6d: cambiar de rutina en el selector ----------
+   - Escuchá el "change" del #selector-rutina (addEventListener).
+   - Guardá rutinaElegida con el nuevo valor del select.
+   - Recargá los ejercicios de esa rutina llamando mostrarEjercicios(rutinaElegida).
+   - Recargá también la dieta de esa rutina llamando MostrarDieta(rutinaElegida).
+   - OJO: preview-rutina.js también escucha este mismo evento para actualizar
+      el nombre en la tarjeta de vista previa — no hace falta tocarlo acá.
+*/
+document.getElementById("selector-rutina").addEventListener("change", () => {
+   rutinaElegida = document.getElementById("selector-rutina").value;
+   mostrarEjercicios(rutinaElegida);
+   MostrarDieta(rutinaElegida); // la dieta pertenece a la rutina, no a la persona
+});
+
+/* ---------- PASO 7: dieta (de la rutina elegida) ----------
+   Mismo patrón que ejercicios, pero para la dieta:
+   - Mostrar: axios.get(".../dietas?rutinaId=" + rutinaElegida) y dibujar tarjetas con botón "Borrar".
+   - Crear:   leer momento y descripcion, axios.post(".../dietas", { rutinaId, momento, descripcion }).
+   - Borrar:  axios.delete(".../dietas/" + id) y recargar con MostrarDieta(rutinaElegida).
+   - OJO: la dieta pertenece a la RUTINA (rutinaId), NO a la persona.
+      Antes usaba personaId — eso estaba mal. Siempre usá rutinaElegida.
 */
 //Mostar
 const MostrarDieta = async (id)=>{
-   const respuesta = await axios.get("http://localhost:3000/dietas?personaId=" + id);
+   const respuesta = await axios.get("http://localhost:3000/dietas?rutinaId=" + id);
    const dietas = respuesta.data
    const listaDieta = document.getElementById("lista-dieta");
    listaDieta.innerHTML = "";
@@ -220,17 +295,17 @@ document.getElementById("formulario-dieta").addEventListener("submit",async (eve
    const momento = document.getElementById("dieta-momento").value;
    const descripcion = document.getElementById("dieta-descripcion").value;
    await axios.post("http://localhost:3000/dietas",{
-      personaId : personaElegida,
+      rutinaId : rutinaElegida, // la dieta pertenece a la rutina, no a la persona
       momento : momento,
       descripcion : descripcion
    })
    document.getElementById("formulario-dieta").reset();
-   MostrarDieta(personaElegida)
+   MostrarDieta(rutinaElegida)
 })
 //Borrar
 const BorrarDieta = async (id)=>{
    await axios.delete("http://localhost:3000/dietas/" + id)
-   MostrarDieta(personaElegida)
+   MostrarDieta(rutinaElegida)
 }
 
 /* ---------- PASO 8: arrancar ----------

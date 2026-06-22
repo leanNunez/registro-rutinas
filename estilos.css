@@ -1,75 +1,1196 @@
-/* ============================================================
-   estilos.css -- TODOS los estilos del proyecto van acá.
-   Está vacío a propósito: abajo te dejamos la lista de lo que
-   hay que estilar y un consejo de cómo hacer cada parte.
-   Completá de a poco, mirando la página en el navegador.
-   ============================================================ */
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap");
 
+/* ================================================================
+      estilos.css — FitPlan
+      Autoras/es: equipo FitPlan
 
-/* ---------- 1) VARIABLES DE COLOR (recomendado empezar por acá) ----------
-   Definí los colores una vez en :root y reusalos con var(--nombre).
-   Ejemplo de qué definir: color de fondo, color de texto, color principal
-   (para botones), color de peligro (para borrar).
-   Cómo: :root { --principal: #1f9d57; ... }  y luego  color: var(--principal);
-*/
+      ÍNDICE DE SECCIONES:
+      1.  Variables de color y medidas
+      
+      2.  Reset base
+      3.  Tipografía
+      4.  Imagen de fondo (las 3 páginas)
+      5.  Barra de navegación (transparente y sticky)
+      6.  Hero / Portada (index.html)
+      7.  Botones
+      8.  Página interior (.pagina)
+      9.  Layout en columnas (crear-rutina y historial)
+      10. Bloques / Secciones
+      11. Formularios
+      12. Fieldset de días (pills)
+      13. Tarjetas (las que crea el JS)
+      14. Botón borrar dentro de tarjetas
+      15. Datos de persona
+      16. Estados vacíos y mensajes
+      17. Scrollbar y selección de texto
+      18. Responsive (pantallas chicas)
+================================================================ */
 
+/* ================================================================
+  1. VARIABLES DE COLOR Y MEDIDAS
+  Cambiá acá y cambia toda la app.
+================================================================ */
+:root {
+  /* Colores principales */
+  --negro: #0d0d0d;
+  --carbon: #1a1a1a;
+  --carbon-medio: #242424;
+  --carbon-claro: #2c2c2c;
+  --borde: #333333;
+  --naranja: #ff5c00;
+  --naranja-suave: #ff8c42;
+  --naranja-bajo: rgba(255, 92, 0, 0.12);
+  --naranja-glow: rgba(255, 92, 0, 0.35);
+  --texto: #e8e8e8;
+  --texto-suave: #a0a0a0;
+  --texto-muted: #666666;
+  --blanco: #ffffff;
+  --error: #ff4444;
+  --exito: #22c55e;
 
-/* ---------- 2) RESET BÁSICO ----------
-   Sacar márgenes y padding por defecto y usar box-sizing: border-box.
-   Cómo: *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-*/
+  /* Bordes redondeados */
+  --radio-sm: 6px;
+  --radio: 10px;
+  --radio-lg: 16px;
 
+  /* Sombras */
+  --sombra: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --sombra-naranja: 0 4px 20px rgba(255, 92, 0, 0.25);
 
-/* ---------- 3) BODY ----------
-   Tipografía, color de texto y color de fondo generales.
-*/
+  /* Velocidad de las animaciones */
+  --transicion: 0.2s ease;
+}
 
+/* ================================================================
+  2. RESET BASE
+  Saca los márgenes y paddings por defecto del navegador.
+================================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-/* ---------- 4) BARRA DE NAVEGACIÓN (.barra) ----------
-   La barra de arriba con el logo y los enlaces.
-   Consejo: usar display: flex y justify-content: space-between para separar
-   el logo (.barra__logo) de los enlaces (.barra__enlaces).
-*/
+html {
+  scroll-behavior: smooth;
+}
 
+body {
+  color: var(--texto);
+  font-family: "Inter", sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 
-/* ---------- 5) PORTADA / HERO (.portada) ----------
-   La presentación de index.html. Tiene texto a un lado y la caja de video al otro.
-   Consejo: display: grid con 2 columnas (grid-template-columns: 1fr 1fr).
-   - .portada__texto h1  -> título bien grande
-   - .portada__video     -> caja vacía: dale alto, un borde punteado y centrá el texto
-*/
+  /* Color de fondo de respaldo (si la imagen no carga) */
+  background-color: var(--negro);
+}
 
+a {
+  color: inherit;
+  text-decoration: none;
+}
 
-/* ---------- 6) LAYOUT DE PÁGINAS (.pagina y .bloque) ----------
-   .pagina -> centra el contenido y le da un ancho máximo (ej: max-width: 900px; margin: 0 auto).
-   .bloque -> cada sección: fondo, borde, padding y separación entre bloques.
-*/
+/* ================================================================
+  4. IMAGEN DE FONDO (se aplica a las 3 páginas)
 
+  Cómo poner la imagen:
+  - Poné tu foto en la misma carpeta que estilos.css.
+  - Cambiá "fondo.jpg" por el nombre de tu archivo.
+  - background-attachment: fixed hace que el fondo no se mueva al hacer scroll.
+  - El ::before agrega una capa oscura encima para que el texto se lea bien.
+================================================================ */
+body::before {
+  content: "";
+  position: fixed; /* queda fija aunque hagas scroll */
+  inset: 0; /* cubre toda la pantalla (top/right/bottom/left: 0) */
+  background-size: cover; /* la imagen cubre todo sin deformarse */
+  background-position: center;
+  background-repeat: no-repeat;
+  /* Capa oscura encima de la foto para que el texto se lea */
+  filter: brightness(0.25);
+  z-index: -1; /* queda DETRÁS de todo el contenido */
+}
 
-/* ---------- 7) FORMULARIOS ----------
-   Estilar inputs, selects, textarea y el fieldset de los días.
-   Consejo: dar padding, borde y que el input ocupe el ancho (width: 100%).
-*/
+/* Cada página usa su propia imagen de fondo a través de una clase en <body> */
+.fondo-1::before {
+  background-image: url("img/img1.jpg");
+} /* index.html     */
+.fondo-2::before {
+  background-image: url("img/img4.jpg");
+} /* crear-rutina   */
+.fondo-3::before {
+  background-image: url("img/img3.avif");
+} /* historial      */
 
+/* ================================================================
+  3. TIPOGRAFÍA
+================================================================ */
+h1,
+h2,
+h3 {
+  font-family: "Barlow Condensed", sans-serif;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
 
-/* ---------- 8) BOTONES (.boton, o el <button>) ----------
-   Un estilo base y dos variantes: principal (color lleno) y peligro (para borrar).
-   Consejo: padding, border-radius, cursor: pointer y un color de :hover.
-*/
+h1 {
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-weight: 800;
+  color: var(--blanco);
+}
 
+h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--naranja-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 1.25rem;
+}
 
-/* ---------- 9) TARJETAS (.tarjeta) ----------
-   Cada item de una lista (una rutina, un ejercicio, etc.) se muestra en una tarjeta.
-   Consejo: fondo, borde, padding y un pequeño margen arriba para separarlas.
-*/
+p {
+  color: var(--texto-suave);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
 
+/* ================================================================
+  5. BARRA DE NAVEGACIÓN
 
-/* ---------- 10) RESUMEN DEL HISTORIAL (#resumen) ----------
-   Las métricas de progreso. Consejo: mostrarlas en columnas con display: grid.
-*/
+  - position: sticky + top: 0 hace que quede pegada arriba al hacer scroll.
+  - background semitransparente + backdrop-filter: blur hace el efecto
+    de "vidrio esmerilado" sobre la imagen de fondo.
+================================================================ */
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  height: 64px;
 
+  /* Fondo semitransparente: rgba(r, g, b, opacidad)
+     0.45 = 45% opaco, el resto se ve a través */
+  background: rgba(13, 13, 13, 0.45);
 
-/* ---------- 11) RESPONSIVE (al final) ----------
-   En pantallas chicas, que la portada pase a 1 sola columna.
-   Cómo: @media (max-width: 800px) { .portada { grid-template-columns: 1fr; } }
-*/
+  /* Efecto de desenfoque sobre lo que hay detrás (la imagen de fondo) */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px); /* para Safari */
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.barra__logo {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--naranja);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow: 0 0 18px var(--naranja-glow);
+  user-select: none;
+}
+
+.barra__enlaces {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.barra__enlaces a {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--texto-suave);
+  padding: 0.45rem 1rem;
+  border-radius: var(--radio-sm);
+  border: 1px solid transparent;
+  transition:
+    color var(--transicion),
+    background var(--transicion),
+    border-color var(--transicion);
+}
+
+.barra__enlaces a:hover,
+.barra__enlaces a.activo {
+  color: var(--naranja);
+  background: var(--naranja-bajo);
+  border-color: rgba(255, 92, 0, 0.3);
+}
+
+/* ================================================================
+  6. HERO / PORTADA (solo index.html)
+  Split en dos mitades con corte diagonal.
+  img2 = fondo base (derecha). img1 = div clipeado encima (izquierda).
+  Título centrado absoluto sobre ambas mitades.
+================================================================ */
+.portada {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+  background: var(--negro);
+}
+
+/* Imagen derecha (atleta) — base, cubre todo */
+.portada__fondo-der {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.portada__fondo-der::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("img/img2.jpg") center / cover no-repeat;
+  transition: transform 0.5s ease;
+}
+
+.portada__fondo-der::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.72) 20%, transparent 70%);
+  z-index: 1;
+}
+
+.portada__fondo-der:hover::before {
+  transform: scale(1.05);
+}
+
+/* Imagen izquierda (gym) clipeada en diagonal */
+.portada__fondo-izq {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(0 0, 60% 0, 42% 100%, 0 100%);
+  z-index: 2;
+  overflow: hidden;
+}
+
+.portada__fondo-izq::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("img/img1.jpg") center / cover no-repeat;
+  transition: transform 0.5s ease;
+}
+
+.portada__fondo-izq::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.68) 40%, transparent 90%);
+  z-index: 1;
+}
+
+.portada__fondo-izq:hover::before {
+  transform: scale(1.05);
+}
+
+/* Contenidos de cada lado */
+.portada__lado {
+  position: absolute;
+  bottom: 4rem;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 280px;
+}
+
+.portada__lado--izq {
+  left: 12%;
+  width: 38%;
+  align-items: center;
+  text-align: center;
+}
+
+.portada__lado--der {
+  right: 12%;
+  width: 38%;
+  align-items: center;
+  text-align: center;
+}
+
+.portada__sub {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--texto-suave);
+}
+
+.portada__lado .boton {
+  width: 180px;
+  justify-content: center;
+}
+
+/* Título central superpuesto */
+.portada__titulo-central {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  text-align: center;
+  font-size: clamp(6.4rem, 6.5vw, 6rem);
+  font-weight: 600;
+  line-height: 1.05;
+  text-shadow: 0 2px 28px rgba(0, 0, 0, 0.95);
+  width: 50%;
+  min-width: 300px;
+  pointer-events: none;
+}
+
+/* Segunda línea en naranja luminoso */
+.portada__acento {
+  color: var(--naranja-suave);
+  text-shadow:
+    0 0 40px rgba(255, 140, 66, 0.6),
+    0 2px 28px rgba(0, 0, 0, 0.95);
+}
+
+/* ================================================================
+  7. BOTONES
+================================================================ */
+.boton,
+button[type="submit"],
+button[type="button"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.5rem;
+  border-radius: var(--radio-sm);
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transicion);
+  white-space: nowrap;
+}
+
+/* Botón principal (naranja lleno) */
+.boton--primario,
+button[type="submit"] {
+  background: var(--naranja);
+  color: var(--blanco);
+  border-color: var(--naranja);
+}
+
+.boton--primario:hover,
+button[type="submit"]:hover {
+  background: var(--naranja-suave);
+  border-color: var(--naranja-suave);
+  box-shadow: var(--sombra-naranja);
+  transform: translateY(-1px);
+}
+
+/* Botón secundario (borde naranja, sin relleno) */
+.boton--secundario {
+  background: transparent;
+  color: var(--naranja);
+  border-color: var(--naranja);
+}
+
+.boton--secundario:hover {
+  background: var(--naranja-bajo);
+}
+
+/* Botón genérico (button[type="button"]) -> usado para Borrar si no tiene clase */
+button[type="button"] {
+  background: var(--carbon-claro);
+  color: var(--texto-suave);
+  border-color: var(--borde);
+}
+
+button[type="button"]:hover {
+  background: var(--borde);
+  color: var(--texto);
+}
+
+/* ================================================================
+  8. PÁGINA INTERIOR (.pagina)
+  Contenedor general de crear-rutina.html e historial.html
+================================================================ */
+.pagina {
+  max-width: 1200px; /* más ancho para que quepan las columnas */
+  margin: 0 auto;
+  padding: 2.5rem 2rem 4rem;
+}
+
+.pagina > h1 {
+  margin-bottom: 0.25rem;
+}
+
+.pagina > p {
+  margin-bottom: 1.5rem;
+  color: var(--texto-suave);
+}
+
+/* ================================================================
+  9. LAYOUT EN COLUMNAS (crear-rutina y historial)
+
+  La idea: las secciones se dividen en columnas para evitar el scroll
+  largo, pero la persona elegida y sus datos siempre se ven arriba
+  (fuera de la grilla de columnas, ocupan todo el ancho).
+
+  Cómo usarlo en el HTML:
+  - Las secciones de "elegir persona" y "datos" van ANTES del .columnas
+    y ocupan el ancho completo de la página (se ven siempre arriba).
+  - Dentro de .columnas van las demás secciones (rutinas, ejercicios,
+    dieta) distribuidas en dos columnas.
+
+  display: grid con repeat(2, 1fr) = dos columnas de igual ancho.
+  gap = espacio entre columnas y filas.
+================================================================ */
+.columnas {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+/* ================================================================
+  9b. LAYOUT DOS COLUMNAS (crear-rutina)
+
+  .pagina--dos-columnas convierte el main en un grid de 2 columnas
+  que ocupa exactamente el alto disponible bajo el nav.
+  La columna izquierda muestra la persona seleccionada (siempre visible).
+  La columna derecha contiene los tabs con scroll propio si el contenido
+  supera el alto disponible.
+================================================================ */
+.pagina--dos-columnas {
+  display: grid;
+  grid-template-columns: 320px 1fr 260px; /* izq: persona | centro: tabs | der: preview */
+  gap: 1.5rem;
+  height: calc(100vh - 64px); /* 64px = alto del nav */
+  padding: 1.5rem 2rem;
+  overflow: hidden; /* sin scroll global */
+  max-width: none; /* anula el max-width del .pagina base */
+}
+
+/* Columna izquierda: flex vertical, scroll propio si los datos no entran */
+.pagina__izquierda {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+}
+
+/* Los bloques dentro de la izquierda no necesitan margin-bottom (gap lo reemplaza) */
+.pagina__izquierda .bloque {
+  margin-bottom: 0;
+}
+
+/* Columna derecha: ocupa todo el alto y deja que el tab panel haga scroll */
+.pagina__derecha {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* El contenedor de tabs crece para llenar la columna derecha */
+.pagina__derecha .tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-top: 0;
+}
+
+/* El panel activo llena el espacio restante y scrollea internamente */
+.pagina__derecha .tabs__panel.activo {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 0;
+}
+
+/* Columna de preview: flex vertical, scroll propio si crece mucho */
+.pagina__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+}
+
+/* Etiqueta "Vista previa" encima de la tarjeta */
+.preview__titulo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--texto-muted);
+}
+
+/* Tarjeta de preview: misma línea naranja izquierda que las tarjetas reales */
+.tarjeta-preview {
+  background: rgba(26, 26, 26, 0.75);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--borde);
+  border-left: 3px solid var(--naranja);
+  border-radius: var(--radio-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Nombre de la rutina: grande y destacado */
+.tarjeta-preview__nombre {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--texto);
+  line-height: 1.2;
+}
+
+/* Cuando no hay nombre todavía: texto gris apagado */
+.tarjeta-preview__nombre.vacio-nombre {
+  color: var(--texto-muted);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1rem;
+}
+
+/* Fila de pills de días seleccionados */
+.tarjeta-preview__dias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-height: 1.5rem; /* reserva espacio aunque no haya días */
+}
+
+/* Cada pill de día en la preview */
+.preview-dia {
+  background: var(--naranja-bajo);
+  border: 1px solid rgba(255, 92, 0, 0.3);
+  border-radius: 100px;
+  color: var(--naranja-suave);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+}
+
+/* Línea separadora entre días y ejercicios */
+.tarjeta-preview__separador {
+  height: 1px;
+  background: var(--borde);
+}
+
+/* Lista de ejercicios guardados */
+.tarjeta-preview__ejercicios {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* Cada ejercicio dentro de la preview */
+.preview-ejercicio {
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+  padding: 0.3rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.preview-ejercicio:last-child {
+  border-bottom: none;
+}
+
+/* Lista de dieta dentro de la preview */
+.tarjeta-preview__dieta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* Cada ítem de dieta: mismo estilo que ejercicio pero con acento naranja-suave */
+.preview-dieta-item {
+  font-size: 0.82rem;
+  color: var(--naranja-suave);
+  padding: 0.3rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.preview-dieta-item:last-child {
+  border-bottom: none;
+}
+
+/* ================================================================
+  9c. TABS / CARRUSEL DE SECCIONES (crear-rutina)
+
+  La nav del carrusel es una fila de botones separada del panel
+  por una línea. El panel activo se muestra, los demás display:none.
+  El JS agrega/quita la clase "activo" en botones y paneles.
+================================================================ */
+.tabs {
+  margin-top: 1.25rem;
+}
+
+/* Fila de botones de navegación */
+.tabs__nav {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--borde);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.tabs__btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radio-sm);
+  color: var(--texto-suave);
+  font-family: "Inter", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0.5rem 1.1rem;
+  cursor: pointer;
+  transition:
+    color var(--transicion),
+    background var(--transicion),
+    border-color var(--transicion);
+}
+
+.tabs__btn:hover {
+  color: var(--texto);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--borde);
+}
+
+/* Tab activo: resaltado en naranja */
+.tabs__btn.tabs__btn--activo {
+  background: rgba(255, 92, 0, 0.2);
+  border-color: var(--naranja);
+  color: var(--naranja);
+  font-weight: 700;
+  box-shadow: inset 0 -2px 0 var(--naranja);
+}
+
+/* Paneles: ocultos por defecto */
+.tabs__panel {
+  display: none;
+}
+
+/* Solo el panel con .activo se muestra */
+.tabs__panel.activo {
+  display: block;
+}
+
+/* ================================================================
+  10. BLOQUES / SECCIONES
+  Cada sección de la página (.bloque) tiene fondo semitransparente
+  para que se vea la imagen de fondo detrás.
+================================================================ */
+.bloque {
+  /* Fondo semitransparente sobre la imagen */
+  background: rgba(26, 26, 26, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  padding: 1.75rem;
+  margin-bottom: 1.25rem;
+  transition: border-color var(--transicion);
+}
+
+.bloque:hover {
+  border-color: #444;
+}
+
+/* El bloque de persona y datos no tiene margin-bottom porque
+   el .columnas de abajo ya tiene su propio margin-top */
+.bloque--ancho-completo {
+  margin-bottom: 0;
+}
+
+/* ================================================================
+  11. FORMULARIOS
+================================================================ */
+label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+  margin-top: 1rem;
+}
+
+label:first-child {
+  margin-top: 0;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="email"],
+select,
+textarea {
+  width: 100%;
+  background: var(--carbon-medio);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  color: var(--texto);
+  font-family: "Inter", sans-serif;
+  font-size: 0.9rem;
+  padding: 0.65rem 0.85rem;
+  outline: none;
+  transition:
+    border-color var(--transicion),
+    box-shadow var(--transicion);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--texto-muted);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--naranja);
+  box-shadow: 0 0 0 3px rgba(255, 92, 0, 0.15);
+}
+
+select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+select option {
+  background: var(--carbon);
+  color: var(--texto);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.6;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 1.5rem;
+}
+
+form button[type="submit"] {
+  margin-top: 1.25rem;
+  align-self: flex-start;
+}
+
+/* ================================================================
+  12. FIELDSET DE DÍAS (checkboxes convertidos en pills)
+================================================================ */
+fieldset {
+  border: none;
+  padding: 0;
+  margin: 1rem 0 0.5rem;
+}
+
+fieldset legend {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+/* Convertimos cada label en una "pill" clickeable */
+fieldset label {
+  display: inline-flex;
+  align-items: center;
+  margin: 0.3rem 0.3rem 0 0;
+  background: var(--carbon-medio);
+  border: 1px solid var(--borde);
+  border-radius: 100px;
+  padding: 0.35rem 0.9rem;
+  color: var(--texto-suave);
+  font-weight: 500;
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition: all var(--transicion);
+  user-select: none;
+}
+
+fieldset label:hover {
+  border-color: var(--naranja-suave);
+  color: var(--naranja-suave);
+}
+
+/* Ocultamos el checkbox real (visualmente la pill lo reemplaza) */
+fieldset label input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Pill activa cuando el checkbox está tildado */
+fieldset label:has(input:checked) {
+  background: var(--naranja);
+  border-color: var(--naranja);
+  color: var(--blanco);
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(255, 92, 0, 0.3);
+}
+
+/* ================================================================
+  13. TARJETAS (las que crea el JavaScript)
+
+  El JS crea <div> sueltos dentro de las listas.
+  Estas reglas les dan el marco, el fondo y la separación.
+
+  Si querés que las tarjetas usen estas clases, en el JS hacé:
+    divRutina.className = "tarjeta";
+  y dentro podrías crear un div con clase "tarjeta__info" para el
+  texto y otro "tarjeta__acciones" para los botones.
+
+  Por ahora dejamos también estilos para los div sueltos dentro
+  de las listas, para que algo se vea aunque el JS no use clases.
+================================================================ */
+
+/* Contenedor de cada lista */
+#lista-rutinas,
+#lista-ejercicios,
+#lista-dieta,
+#lista-historial,
+#datos-persona,
+#resumen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+/* Tarjeta con clase (la forma prolija) */
+.tarjeta {
+  background: rgba(36, 36, 36, 0.9);
+  border: 1px solid var(--borde);
+  border-left: 3px solid var(--naranja); /* acento naranja a la izquierda */
+  border-radius: var(--radio);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  transition:
+    border-color var(--transicion),
+    background var(--transicion);
+}
+
+.tarjeta:hover {
+  background: rgba(44, 44, 44, 0.95);
+  border-left-color: var(--naranja-suave);
+}
+
+.tarjeta__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tarjeta__nombre {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--texto);
+}
+
+.tarjeta__detalle {
+  font-size: 0.8rem;
+  color: var(--texto-muted);
+}
+
+.tarjeta__acciones {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Tarjeta sin clase (div suelto que crea el JS)
+   Le damos el mismo aspecto para que algo se vea */
+#lista-rutinas > div,
+#lista-ejercicios > div,
+#lista-dieta > div,
+#lista-historial > div {
+  background: rgba(36, 36, 36, 0.9);
+  border: 1px solid var(--borde);
+  border-left: 3px solid var(--naranja);
+  border-radius: var(--radio);
+  padding: 0.85rem 1.1rem;
+  color: var(--texto);
+  font-size: 0.9rem;
+  transition: background var(--transicion);
+}
+
+#lista-rutinas > div:hover,
+#lista-ejercicios > div:hover,
+#lista-dieta > div:hover,
+#lista-historial > div:hover {
+  background: rgba(44, 44, 44, 0.95);
+}
+
+/* ================================================================
+  14. BOTÓN BORRAR DENTRO DE TARJETAS
+
+  El JS crea botones con textContent = "Borrar".
+  Como no tienen clase, caen en button[type="button"].
+  Le damos un estilo de peligro (rojo) para que se vea claramente.
+
+  Si en el JS le agregás  botonBorrar.className = "btn-borrar"
+  podés usar las reglas de .btn-borrar de abajo para más control.
+================================================================ */
+
+/* Botones sueltos dentro de las listas (los que crea el JS sin clase) */
+#lista-rutinas button,
+#lista-ejercicios button,
+#lista-dieta button,
+#lista-historial button {
+  background: transparent;
+  color: #ff6b6b; /* rojo claro, visible sobre el fondo */
+  border: 1px solid rgba(255, 107, 107, 0.5);
+  border-radius: var(--radio-sm);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5rem; /* separación del texto de la tarjeta */
+  transition: all var(--transicion);
+}
+
+#lista-rutinas button:hover,
+#lista-ejercicios button:hover,
+#lista-dieta button:hover,
+#lista-historial button:hover {
+  background: rgba(255, 107, 107, 0.15);
+  border-color: #ff6b6b;
+  transform: translateY(-1px); /* se levanta levemente al hacer hover */
+}
+
+/* Si le ponés clase btn-borrar en el JS */
+.btn-borrar {
+  background: transparent;
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.5);
+  border-radius: var(--radio-sm);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transicion);
+}
+
+.btn-borrar:hover {
+  background: rgba(255, 107, 107, 0.15);
+  border-color: #ff6b6b;
+}
+
+/* ================================================================
+  15. DATOS DE PERSONA (grilla de métricas)
+================================================================ */
+.datos-grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.dato-item {
+  background: var(--carbon-medio);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 1rem;
+  text-align: center;
+}
+
+.dato-item__valor {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--naranja);
+  line-height: 1;
+}
+
+.dato-item__etiqueta {
+  font-size: 0.75rem;
+  color: var(--texto-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 0.3rem;
+}
+
+/* ================================================================
+  16. ESTADOS VACÍOS Y MENSAJES DE FEEDBACK
+================================================================ */
+.vacio {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--texto-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+  border: 1px dashed var(--borde);
+  border-radius: var(--radio);
+}
+
+.mensaje {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radio-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 0.75rem;
+  display: none;
+}
+
+.mensaje--exito {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: var(--exito);
+}
+
+.mensaje--error {
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  color: var(--error);
+}
+
+.mensaje.visible {
+  display: block;
+}
+
+/* ================================================================
+  17. SCROLLBAR Y SELECCIÓN DE TEXTO
+================================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--negro);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--carbon-claro);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--naranja);
+}
+
+::selection {
+  background: rgba(255, 92, 0, 0.3);
+  color: var(--blanco);
+}
+
+/* ================================================================
+  18. RESPONSIVE (pantallas chicas)
+
+  En pantallas menores a 768px:
+  - Las columnas pasan a una sola columna (todo apilado).
+  - La portada también pasa a una columna.
+================================================================ */
+@media (max-width: 768px) {
+  .barra {
+    padding: 0 1rem;
+  }
+
+  .barra__enlaces a {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .portada {
+    height: auto;
+    min-height: calc(100vh - 64px);
+  }
+
+  .portada__fondo-izq {
+    clip-path: polygon(0 0, 100% 0, 100% 48%, 0 58%);
+  }
+
+  .portada__titulo-central {
+    top: 25%;
+    width: 70%;
+    font-size: 2rem;
+  }
+
+  .portada__lado--izq {
+    top: 60%;
+    bottom: auto;
+    left: 1.5rem;
+  }
+
+  .portada__lado--der {
+    bottom: 2rem;
+    right: 1.5rem;
+  }
+
+  /* En móvil las columnas pasan a apilarse */
+  .columnas {
+    grid-template-columns: 1fr;
+  }
+
+  .pagina {
+    padding: 1.75rem 1rem 3rem;
+  }
+
+  .bloque {
+    padding: 1.25rem;
+  }
+
+  form button[type="submit"] {
+    width: 100%;
+  }
+
+  .tarjeta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tarjeta__acciones {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .portada__botones {
+    flex-direction: column;
+  }
+
+  .boton {
+    text-align: center;
+    width: 100%;
+  }
+
+  .datos-grilla {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Respeta preferencia del sistema de no animar */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

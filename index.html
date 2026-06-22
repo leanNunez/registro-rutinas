@@ -7,7 +7,7 @@
   <!-- Conectamos la hoja de estilos (está vacía, hay que completarla) -->
   <link rel="stylesheet" href="estilos.css" />
 </head>
-<body>
+<body class="fondo-1">
 
   <!-- ===== BARRA DE NAVEGACIÓN (se repite en las 3 páginas) ===== -->
   <nav class="barra">
@@ -19,25 +19,28 @@
     </div>
   </nav>
 
-  <!-- ===== PORTADA / HERO =====
-        Esta página es solo presentación: NO necesita JavaScript.
-        Tiene un título grande, un texto, botones y un espacio de video VACÍO. -->
+  <!-- ===== PORTADA / HERO ===== -->
   <header class="portada">
 
-    <div class="portada__texto">
-      <h1>Armá el plan perfecto para cada persona</h1>
-      <p>Elegí una persona, mirá sus datos, asignale su rutina y su dieta, y seguí su progreso.</p>
-      <div class="portada__botones">
-        <a class="boton boton--primario" href="crear-rutina.html">Crear una rutina</a>
-        <a class="boton boton--secundario" href="historial.html">Ver progreso</a>
-      </div>
+    <!-- Imagen derecha (atleta) — fondo base -->
+    <div class="portada__fondo-der"></div>
+
+    <!-- Imagen izquierda (gym) — clipeada en diagonal encima -->
+    <div class="portada__fondo-izq"></div>
+
+    <!-- Contenido izquierdo: Crear rutina -->
+    <div class="portada__lado portada__lado--izq">
+      <p class="portada__sub">Elegí una persona, mirá sus datos, asignale su rutina y su dieta, y seguí su progreso.</p>
+      <a class="boton boton--primario" href="crear-rutina.html">Crear una rutina</a>
     </div>
 
-    <!-- ESPACIO DE VIDEO VACÍO:
-          Más adelante acá va un video. Por ahora es una caja vacía.
-          (Cuando elijamos el video, se reemplaza este div por una etiqueta <video>.) -->
-    <div class="portada__video">
-      <p>Espacio para el video (lo elegimos después)</p>
+    <!-- Título centrado sobre ambas mitades -->
+    <h1 class="portada__titulo-central">Armá el plan<br><span class="portada__acento">perfecto</span> para<br>cada persona</h1>
+
+    <!-- Contenido derecho: Ver progreso -->
+    <div class="portada__lado portada__lado--der">
+      <p class="portada__sub">Porque confiaron en vos, tenés que crear el mejor plan para ellos.</p>
+      <a class="boton boton--secundario" href="historial.html">Ver progreso</a>
     </div>
 
   </header>
