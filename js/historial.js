@@ -98,9 +98,11 @@ async function cargarRutinasParaHistorial(idPersona) {
         );
 
         selectorRutinaHistorial.innerHTML = "";
+        rutinasDisponibles = [];
 
         if (rutinas.length === 0) {
             selectorRutinaHistorial.innerHTML = "<option>Sin rutinas</option>";
+            dibujarPreviewRutina({ nombre: "", dias: [] }, []);
             return;
         }
 
