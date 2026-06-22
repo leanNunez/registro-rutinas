@@ -1,23 +1,33 @@
+/* ============================================================
+   historial.js — Página de historial de entrenamientos.
+   Mismas herramientas que crear-rutina.js: Axios + DOM vanilla.
+   ============================================================ */
+
 const URL_BASE = "http://localhost:3000";
 
-// Variables globales para mantener el estado
+/* ---------- PASO 0: estado global y referencias al DOM ----------
+   personaElegida: guarda el id de la persona activa entre funciones.
+   Las referencias al DOM se capturan una sola vez para no repetir
+   getElementById / querySelector en cada función.
+*/
 let personaElegida = null;
 
-// Referencias al DOM (Asegúrate de que estos IDs existan en tu historial.html)
+const formularioRegistro        = document.getElementById("formulario-registro");
+const selectorPersona           = document.getElementById("selector-persona");
+const selectorRutinaHistorial   = document.getElementById("selector-rutina-historial");
+const listaHistorial            = document.getElementById("lista-historial");
+const resumenDiv                = document.getElementById("resumen");
+const formularioSugerencia      = document.getElementById("formulario-sugerencia");
+const inputSugerencia           = document.getElementById("texto-sugerencia");
 
-const formularioRegistro = document.getElementById("formulario-registro");
-const selectorPersona = document.getElementById("selector-persona");
-const selectorRutinaHistorial = document.getElementById("selector-rutina-historial");
-const listaHistorial = document.getElementById("lista-historial");
-const resumenDiv = document.getElementById("resumen");
-const formularioSugerencia = document.getElementById("formulario-sugerencia");
-const inputSugerencia = document.getElementById("texto-sugerencia");
-
-
-// Funcion para mostrar el alert personalizado
+/* ---------- PASO 0B: modal de confirmación ----------
+   Reemplaza el alert() nativo del navegador con un modal propio.
+   mostrarModal(mensaje): inyecta el texto y activa la clase "activo".
+   El botón Aceptar la cierra removiendo esa clase.
+*/
 function mostrarModal(mensaje) {
     const overlay = document.getElementById("modal-overlay");
-    const texto = document.getElementById("modal-mensaje");
+    const texto   = document.getElementById("modal-mensaje");
     texto.textContent = mensaje;
     overlay.classList.add("activo");
 }
@@ -28,13 +38,14 @@ document.getElementById("modal-boton-ok").addEventListener("click", () => {
 
 
 /* ---------- PASO 1: llenar el selector de personas ----------
-   Igual que en crear-rutina.js: axios.get(".../personas"), recorrer y crear <option>.
-   Al final, elegir la primera y cargar su historial (PASO 3).
+   - GET /personas → crea un <option> por persona en #selector-persona.
+   - Elige la primera por defecto y dispara en cadena:
+     cargarRutinasParaHistorial → cargarHistorial → cargarSugerencia.
 */
 async function cargarPersonas() {
     try {
         const respuesta = await axios.get(`${URL_BASE}/personas`);
-        const personas = respuesta.data;
+        const personas  = respuesta.data;
 
         selectorPersona.innerHTML = "";
 
@@ -44,15 +55,14 @@ async function cargarPersonas() {
         }
 
         personas.forEach(persona => {
-            const opcion = document.createElement("option");
-            opcion.value = persona.id;
+            const opcion       = document.createElement("option");
+            opcion.value       = persona.id;
             opcion.textContent = persona.nombre;
             selectorPersona.appendChild(opcion);
         });
 
-        // Selecciona la primera persona por defecto y carga sus datos
-        personaElegida = String(personas[0].id ?? "").trim();
-        selectorPersona.value = personaElegida;
+        personaElegida          = String(personas[0].id ?? "").trim();
+        selectorPersona.value   = personaElegida;
 
         await cargarRutinasParaHistorial(personaElegida);
         await cargarHistorial();
@@ -63,34 +73,37 @@ async function cargarPersonas() {
     }
 }
 
-/* ---------- PASO 2: al cambiar de persona ----------
-   - Guardá personaElegida.
-   - Traé la persona (axios.get ".../personas/" + id) y poné su .sugerencia
-     dentro del <textarea id="texto-sugerencia"> (.value = ...).
-   - Traé sus rutinas (axios.get ".../rutinas?personaId=" + personaElegida) y
-     llenás el <select id="selector-rutina-historial"> con un <option> por rutina
-     (igual que se hace con #selector-rutina en crear-rutina.js).
-   - Cargá el historial (PASO 3).
+
+/* ---------- PASO 2: cambio de persona ----------
+   cargarRutinasParaHistorial: GET /rutinas → filtra por personaId y
+   llena #selector-rutina-historial con las rutinas de la persona activa.
+   Se filtra con String() para evitar problemas de tipo (1 vs "1").
+
+   cargarSugerencia: GET /personas/:id → muestra la sugerencia guardada
+   en el <textarea #texto-sugerencia>.
+
+   El listener de #selector-persona actualiza personaElegida y llama
+   a las dos funciones anteriores + recarga el historial.
 */
 async function cargarRutinasParaHistorial(idPersona) {
     try {
-        // Obtenemos todas las rutinas
-        const respuesta = await axios.get(`${URL_BASE}/rutinas`);
-        const todasLasRutinas = respuesta.data;
+        const respuesta        = await axios.get(`${URL_BASE}/rutinas`);
+        const todasLasRutinas  = respuesta.data;
 
-        // Filtramos usando String() para comparar texto con texto
-        const rutinas = todasLasRutinas.filter(r => String(r.personaId) === String(idPersona));
+        const rutinas = todasLasRutinas.filter(
+            r => String(r.personaId) === String(idPersona)
+        );
 
         selectorRutinaHistorial.innerHTML = "";
 
         if (rutinas.length === 0) {
-            selectorRutinaHistorial.innerHTML = '<option>Sin rutinas</option>';
+            selectorRutinaHistorial.innerHTML = "<option>Sin rutinas</option>";
             return;
         }
 
         rutinas.forEach(rutina => {
-            const opcion = document.createElement("option");
-            opcion.value = rutina.id;
+            const opcion       = document.createElement("option");
+            opcion.value       = rutina.id;
             opcion.textContent = rutina.nombre;
             selectorRutinaHistorial.appendChild(opcion);
         });
@@ -101,16 +114,14 @@ async function cargarRutinasParaHistorial(idPersona) {
 
 async function cargarSugerencia(idPersona) {
     try {
-        const respuesta = await axios.get(`${URL_BASE}/personas/${idPersona}`);
-        const persona = respuesta.data;
-        // Asignamos la sugerencia actual al textarea
-        inputSugerencia.value = persona.sugerencia || "";
+        const respuesta        = await axios.get(`${URL_BASE}/personas/${idPersona}`);
+        const persona          = respuesta.data;
+        inputSugerencia.value  = persona.sugerencia || "";
     } catch (error) {
         console.error("Error al cargar sugerencia:", error);
     }
 }
 
-// Al cambiar de persona, se actualizan rutinas, historial y sugerencia
 selectorPersona.addEventListener("change", async () => {
     personaElegida = String(selectorPersona.value ?? "").trim();
     await cargarRutinasParaHistorial(personaElegida);
@@ -118,33 +129,38 @@ selectorPersona.addEventListener("change", async () => {
     await cargarSugerencia(personaElegida);
 });
 
-/* ---------- PASO 3: mostrar el historial + el resumen ----------
-   - Traé los registros con axios.get(".../historial?personaId=" + personaElegida).
-   - LISTA: vaciá #lista-historial y, recorriendo, creá una tarjeta por registro
-     (fecha, ejercicio, peso, repeticiones, dificultad) + botón Borrar.
-     Consejo: ordenalos del más nuevo al más viejo antes de dibujar.
-   - RESUMEN: en #resumen mostrá 3 cosas calculadas con los registros:
-       a) Progreso de carga: por cada ejercicio, peso del primer registro vs del último.
-       b) Último cambio de rutina: buscá el último registro donde cambia rutinaId.
-       c) Ejercicios que cuestan: los que tienen dificultad "alta".
-     (son funciones simples: agrupar/ordenar/restar/filtrar)
+
+/* ---------- PASO 3: mostrar historial y resumen ----------
+   cargarHistorial: GET /historial → normaliza todos los campos a String
+   para evitar inconsistencias de tipo, filtra por personaElegida y
+   ordena del registro más nuevo al más viejo (por id descendente).
+   Delega el pintado a dibujarLista y calcularResumen.
+
+   dibujarLista: vacía #lista-historial y crea una tarjeta por registro
+   con ejercicio, fecha, peso, reps, dificultad y botón Borrar.
+
+   calcularResumen: en #resumen muestra cuatro métricas calculadas:
+     · Progreso de carga por ejercicio (primer peso → último peso).
+     · Última rutina registrada.
+     · Ejercicios con dificultad "alta".
+     · Sugerencia del entrenador (llega como parámetro desde PASO 5).
 */
 async function cargarHistorial(sugerencia = "") {
     if (!personaElegida) return;
 
     try {
-        const respuesta = await axios.get(`${URL_BASE}/historial`);
-        const registros = (respuesta.data || [])
+        const respuesta  = await axios.get(`${URL_BASE}/historial`);
+        const registros  = (respuesta.data || [])
             .map(registro => ({
                 ...registro,
-                personaId: String(registro.personaId ?? "").trim(),
-                rutinaId: String(registro.rutinaId ?? "").trim(),
-                ejercicio: String(registro.ejercicio ?? "").trim(),
-                fecha: String(registro.fecha ?? "").trim() || "Sin fecha",
-                dificultad: String(registro.dificultad ?? "").trim() || "sin definir"
+                personaId:   String(registro.personaId   ?? "").trim(),
+                rutinaId:    String(registro.rutinaId    ?? "").trim(),
+                ejercicio:   String(registro.ejercicio   ?? "").trim(),
+                fecha:       String(registro.fecha       ?? "").trim() || "Sin fecha",
+                dificultad:  String(registro.dificultad  ?? "").trim() || "sin definir"
             }))
-            .filter(registro => registro.personaId === String(personaElegida))
-            .filter(registro => registro.ejercicio.length > 0)
+            .filter(r => r.personaId === String(personaElegida))
+            .filter(r => r.ejercicio.length > 0)
             .sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
 
         dibujarLista(registros);
@@ -154,80 +170,74 @@ async function cargarHistorial(sugerencia = "") {
     }
 }
 
-// --- FUNCIONES DE DIBUJO ---
 function dibujarLista(registros) {
-    const lista = document.getElementById("lista-historial");
-    lista.innerHTML = "";
+    listaHistorial.innerHTML = "";
 
     if (registros.length === 0) {
-        lista.innerHTML = "<p>No hay registros para esta persona todavía.</p>";
+        listaHistorial.innerHTML = "<p>No hay registros para esta persona todavía.</p>";
         return;
     }
 
     registros.forEach(reg => {
-        const tarjeta = document.createElement("div");
-        tarjeta.className = "bloque tarjeta";
-        tarjeta.innerHTML = `
+        const tarjeta       = document.createElement("div");
+        tarjeta.className   = "bloque tarjeta";
+        tarjeta.innerHTML   = `
             <p><strong>${reg.ejercicio}</strong></p>
             <p>Fecha: ${reg.fecha}</p>
             <p>Peso: ${reg.peso}kg | Reps: ${reg.repeticiones} | Dificultad: ${reg.dificultad}</p>
             <button type="button" class="btn-borrar" data-id="${reg.id}">Borrar</button>
         `;
-        lista.appendChild(tarjeta);
+        listaHistorial.appendChild(tarjeta);
     });
 }
 
 function calcularResumen(registros, sugerencia) {
     if (!resumenDiv) return;
 
-    const total = registros.length;
-    const ejerciciosUnicos = [...new Set(registros.map(reg => reg.ejercicio))];
+    const total            = registros.length;
+    const ejerciciosUnicos = [...new Set(registros.map(r => r.ejercicio))];
 
     const progreso = ejerciciosUnicos.map(ejercicio => {
-        const items = registros.filter(reg => reg.ejercicio === ejercicio);
+        const items   = registros.filter(r => r.ejercicio === ejercicio);
         const primero = items[items.length - 1];
-        const ultimo = items[0];
-
+        const ultimo  = items[0];
         if (!primero || !ultimo) return null;
-
         return `• ${ejercicio}: ${primero.peso}kg → ${ultimo.peso}kg`;
     }).filter(Boolean).join("<br>");
 
-    const ultimoRegistro = registros[0];
-    const ultimoCambioRutina = ultimoRegistro ? `Rutina ${ultimoRegistro.rutinaId}` : "Sin registros";
-    const ejerciciosDificiles = registros
-        .filter(reg => String(reg.dificultad).toLowerCase() === "alta")
-        .map(reg => reg.ejercicio)
+    const ultimoRegistro    = registros[0];
+    const ultimaRutina      = ultimoRegistro ? `Rutina ${ultimoRegistro.rutinaId}` : "Sin registros";
+    const ejerciciosDific   = registros
+        .filter(r => String(r.dificultad).toLowerCase() === "alta")
+        .map(r => r.ejercicio)
         .join(", ");
 
     resumenDiv.innerHTML = `
         <p><strong>Total de registros:</strong> ${total}</p>
         <p><strong>Progreso de carga:</strong><br>${progreso || "Sin datos"}</p>
-        <p><strong>Último cambio de rutina:</strong> ${ultimoCambioRutina}</p>
-        <p><strong>Ejercicios que cuestan:</strong> ${ejerciciosDificiles || "Ninguno"}</p>
+        <p><strong>Último cambio de rutina:</strong> ${ultimaRutina}</p>
+        <p><strong>Ejercicios que cuestan:</strong> ${ejerciciosDific || "Ninguno"}</p>
         <p><strong>Próximo cambio sugerido:</strong> ${sugerencia || "Sin sugerencias por ahora"}</p>
     `;
 }
 
+
 /* ---------- PASO 4: registrar un entrenamiento ----------
-   - Escuchá el "submit" del #formulario-registro, con evento.preventDefault().
-   - La fecha se pone sola:  new Date().toISOString().slice(0, 10)  -> "AAAA-MM-DD".
-   - Leé rutinaId del <select id="selector-rutina-historial"> (.value, convertilo con Number).
-   - Leé ejercicio, peso (Number), repeticiones (Number) y dificultad.
-   - axios.post(".../historial", { personaId, rutinaId, fecha, ejercicio, peso, repeticiones, dificultad }).
-   - Limpiá el formulario y volvé a cargar el historial (PASO 3).
+   Submit de #formulario-registro: recoge todos los campos del formulario,
+   genera la fecha de hoy automáticamente con toISOString y hace POST
+   /historial. Luego limpia el formulario y recarga el historial.
 */
 formularioRegistro.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const nuevoRegistro = {
-        personaId: selectorPersona.value,
-        rutinaId: Number(selectorRutinaHistorial.value),
-        ejercicio: document.getElementById("registro-ejercicio").value,
-        peso: document.getElementById("registro-peso").value,
+        personaId:    selectorPersona.value,
+        rutinaId:     Number(selectorRutinaHistorial.value),
+        ejercicio:    document.getElementById("registro-ejercicio").value,
+        peso:         document.getElementById("registro-peso").value,
         repeticiones: document.getElementById("registro-repeticiones").value,
-        dificultad: document.getElementById("registro-dificultad").value,
-        fecha: new Date().toISOString().slice(0, 10)
+        dificultad:   document.getElementById("registro-dificultad").value,
+        fecha:        new Date().toISOString().slice(0, 10)
     };
 
     try {
@@ -239,11 +249,11 @@ formularioRegistro.addEventListener("submit", async (e) => {
     }
 });
 
-/* ---------- PASO 5: guardar la sugerencia ----------
-   - Escuchá el "click" del botón #btn-guardar-sugerencia.
-   - Leé el texto del <textarea> y guardalo en la persona:
-       axios.patch(".../personas/" + personaElegida, { sugerencia: texto }).
-   - Recargá la sugerencia y el resumen para reflejar el cambio.
+
+/* ---------- PASO 5: guardar sugerencia del entrenador ----------
+   Submit de #formulario-sugerencia: PATCH /personas/:id con el texto
+   del textarea. Muestra el modal de confirmación y recarga el historial
+   pasándole la sugerencia para que aparezca en el resumen al instante.
 */
 formularioSugerencia.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -264,22 +274,29 @@ formularioSugerencia.addEventListener("submit", async (e) => {
     }
 });
 
+
 /* ---------- PASO 6: borrar un registro ----------
-   - axios.delete(".../historial/" + id) y después recargar (PASO 3).
+   Click delegation en #lista-historial: detecta el botón Borrar por
+   data-id, hace DELETE /historial/:id y recarga la lista.
+   Usar delegation evita agregar N listeners, uno por cada tarjeta.
 */
 listaHistorial.addEventListener("click", async (e) => {
-    if (e.target.tagName === "BUTTON" && e.target.dataset.id) {
-        const idRegistro = e.target.dataset.id;
-        try {
-            await axios.delete(`${URL_BASE}/historial/${idRegistro}`);
-            await cargarHistorial();
-        } catch (error) {
-            console.error("Error al borrar:", error);
-        }
+    if (e.target.tagName !== "BUTTON" || !e.target.dataset.id) return;
+
+    const idRegistro = e.target.dataset.id;
+    try {
+        await axios.delete(`${URL_BASE}/historial/${idRegistro}`);
+        await cargarHistorial();
+    } catch (error) {
+        console.error("Error al borrar:", error);
     }
 });
 
-// --- ARRANQUE (Lo que enciende el motor) ---
+
+/* ---------- ARRANQUE ----------
+   iniciar() llama a cargarPersonas(), que al terminar dispara el resto
+   en cadena. Es el único punto de entrada del módulo.
+*/
 async function iniciar() {
     await cargarPersonas();
 }
