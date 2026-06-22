@@ -6,14 +6,17 @@
 const URL_BASE = "http://localhost:3000";
 
 /* ---------- PASO 0: estado global y referencias al DOM ----------
-    personaElegida: id de la persona activa entre funciones.
-    rutinasDisponibles: array con las rutinas de la persona activa,
-    guardado en memoria para no hacer un GET extra al cambiar de rutina.
+    personaElegida:     id de la persona activa entre funciones.
+    rutinasDisponibles: rutinas de la persona activa en memoria (sin GET extra).
+    historialActual:    registros del historial activo en memoria, para que
+                        dibujarPreviewRutina pueda mostrar el último peso de
+                        cada ejercicio sin un GET adicional.
     Las referencias al DOM se capturan una sola vez para no repetir
     getElementById / querySelector en cada función.
 */
 let personaElegida      = null;
 let rutinasDisponibles  = [];
+let historialActual     = [];
 
 const formularioRegistro        = document.getElementById("formulario-registro");
 const selectorPersona           = document.getElementById("selector-persona");
@@ -22,6 +25,8 @@ const listaHistorial            = document.getElementById("lista-historial");
 const resumenDiv                = document.getElementById("resumen");
 const formularioSugerencia      = document.getElementById("formulario-sugerencia");
 const inputSugerencia           = document.getElementById("texto-sugerencia");
+const formularioDificultades    = document.getElementById("formulario-dificultades");
+const inputDificultades         = document.getElementById("texto-dificultades");
 
 /* ---------- PASO 0B: modal de confirmación ----------
     Reemplaza el alert() nativo del navegador con un modal propio.
@@ -43,7 +48,7 @@ document.getElementById("modal-boton-ok").addEventListener("click", () => {
 /* ---------- PASO 1: llenar el selector de personas ----------
     - GET /personas → crea un <option> por persona en #selector-persona.
     - Elige la primera por defecto y dispara en cadena:
-        cargarRutinasParaHistorial → cargarHistorial → cargarSugerencia.
+        cargarRutinasParaHistorial → cargarHistorial → cargarNotasPersona.
 */
 async function cargarPersonas() {
     try {
@@ -69,7 +74,7 @@ async function cargarPersonas() {
 
         await cargarRutinasParaHistorial(personaElegida);
         await cargarHistorial();
-        await cargarSugerencia(personaElegida);
+        await cargarNotasPersona(personaElegida);
 
     } catch (error) {
         console.error("Error al cargar personas:", error);
@@ -82,7 +87,7 @@ async function cargarPersonas() {
     llena #selector-rutina-historial con las rutinas de la persona activa.
     Se filtra con String() para evitar problemas de tipo (1 vs "1").
 
-    cargarSugerencia: GET /personas/:id → muestra la sugerencia guardada
+    cargarNotasPersona: GET /personas/:id → muestra la sugerencia guardada
     en el <textarea #texto-sugerencia>.
 
     El listener de #selector-persona actualiza personaElegida y llama
@@ -121,13 +126,14 @@ async function cargarRutinasParaHistorial(idPersona) {
     }
 }
 
-async function cargarSugerencia(idPersona) {
+async function cargarNotasPersona(idPersona) {
     try {
-        const respuesta        = await axios.get(`${URL_BASE}/personas/${idPersona}`);
-        const persona          = respuesta.data;
-        inputSugerencia.value  = persona.sugerencia || "";
+        const respuesta          = await axios.get(`${URL_BASE}/personas/${idPersona}`);
+        const persona            = respuesta.data;
+        inputSugerencia.value    = persona.sugerencia    || "";
+        inputDificultades.value  = persona.dificultades  || "";
     } catch (error) {
-        console.error("Error al cargar sugerencia:", error);
+        console.error("Error al cargar notas de la persona:", error);
     }
 }
 
@@ -135,7 +141,7 @@ selectorPersona.addEventListener("change", async () => {
     personaElegida = String(selectorPersona.value ?? "").trim();
     await cargarRutinasParaHistorial(personaElegida);
     await cargarHistorial();
-    await cargarSugerencia(personaElegida);
+    await cargarNotasPersona(personaElegida);
     // El preview se actualiza dentro de cargarRutinasParaHistorial con la primera rutina
 });
 
@@ -195,11 +201,20 @@ function dibujarPreviewRutina(rutina, ejercicios) {
     }
 
     ejercicios.forEach(ej => {
+        // Busca el registro más reciente de este ejercicio (ya están newest-first)
+        const ultimoReg  = historialActual.find(
+            r => r.ejercicio.toLowerCase() === ej.nombre.toLowerCase()
+        );
+        const ultimoPeso = ultimoReg
+            ? `Último: ${ultimoReg.peso}kg · ${ultimoReg.fecha}`
+            : "Sin registros aún";
+
         const item       = document.createElement("div");
         item.className   = "preview-ejercicio";
         item.innerHTML   = `
             <strong>${ej.nombre}</strong>
             <span>${ej.series} series × ${ej.repeticiones} reps · ${ej.descanso}</span>
+            <span class="preview-ejercicio__peso">${ultimoPeso}</span>
         `;
         ejercDiv.appendChild(item);
     });
@@ -239,6 +254,7 @@ async function cargarHistorial(sugerencia = "") {
             .filter(r => r.ejercicio.length > 0)
             .sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
 
+        historialActual = registros; // queda en memoria para el preview de pesos
         dibujarLista(registros);
         calcularResumen(registros, sugerencia);
     } catch (error) {
@@ -326,11 +342,14 @@ formularioRegistro.addEventListener("submit", async (e) => {
 });
 
 
-/* ---------- PASO 5: guardar sugerencia del entrenador ----------
-    Submit de #formulario-sugerencia: PATCH /personas/:id con el texto
-    del textarea. Muestra el modal de confirmación y recarga el historial
-    pasándole la sugerencia para que aparezca en el resumen al instante.
-    */
+/* ---------- PASO 5: guardar notas del entrenador ----------
+    PASO 5A — sugerencia: PATCH /personas/:id con el texto del textarea.
+    Muestra modal y recarga el historial pasándole la sugerencia para
+    que aparezca en el resumen al instante.
+
+    PASO 5B — dificultades: mismo patrón, campo distinto. Guarda texto
+    libre sobre qué le cuesta a la persona y muestra modal de confirmación.
+*/
 formularioSugerencia.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -342,11 +361,24 @@ formularioSugerencia.addEventListener("submit", async (e) => {
         });
 
         mostrarModal("¡Sugerencia guardada con éxito!");
-        await cargarSugerencia(personaElegida);
+        await cargarNotasPersona(personaElegida);
         await cargarHistorial(textoSugerencia);
 
     } catch (error) {
         console.error("Error al guardar la sugerencia:", error);
+    }
+});
+
+formularioDificultades.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    try {
+        await axios.patch(`${URL_BASE}/personas/${personaElegida}`, {
+            dificultades: inputDificultades.value
+        });
+        mostrarModal("¡Notas guardadas!");
+    } catch (error) {
+        console.error("Error al guardar dificultades:", error);
     }
 });
 

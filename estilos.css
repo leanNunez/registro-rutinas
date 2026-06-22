@@ -603,6 +603,34 @@ button[type="button"]:hover {
   border-bottom: none;
 }
 
+/* Último peso registrado dentro de cada ejercicio del preview */
+.preview-ejercicio__peso {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--naranja);
+  margin-top: 0.15rem;
+  opacity: 0.85;
+}
+
+/* Enlace para ir a modificar la rutina desde el preview */
+.btn-modificar-rutina {
+  display: block;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--naranja);
+  text-decoration: none;
+  padding: 0.4rem 0;
+  border: 1px solid var(--naranja);
+  border-radius: 6px;
+  margin-top: 0.5rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-modificar-rutina:hover {
+  background-color: var(--naranja);
+  color: #000;
+}
+
 /* Lista de dieta dentro de la preview */
 .tarjeta-preview__dieta {
   display: flex;

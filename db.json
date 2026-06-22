@@ -7,7 +7,8 @@
       "peso": 64,
       "estatura": 1.68,
       "objetivo": "Ganar fuerza",
-      "sugerencia": "Subir 2.5 kg en sentadilla la próxima semana."
+      "sugerencia": "Subir 2.5 kg en sentadilla la próxima semana.",
+      "dificultades": ""
     },
     {
       "id": 2,
@@ -16,7 +17,8 @@
       "peso": 82,
       "estatura": 1.81,
       "objetivo": "Bajar grasa",
-      "sugerencia": ""
+      "sugerencia": "",
+      "dificultades": ""
     },
     {
       "nombre": "Juan Perez",
@@ -25,6 +27,7 @@
       "estatura": 182,
       "objetivo": "ganar musculo",
       "sugerencia": "",
+      "dificultades": "",
       "id": 3
     }
   ],
@@ -44,10 +47,10 @@
     {
       "rutinaId": "1",
       "nombre": "sentadilla",
-      "series": 0,
-      "repeticiones": 0,
-      "descanso": "",
-      "id": 1
+      "series": 4,
+      "repeticiones": 12,
+      "descanso": "90sg",
+      "id": 2
     }
   ],
   "dietas": [
