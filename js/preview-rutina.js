@@ -85,10 +85,11 @@ function actualizarPreviewDias() {
 function actualizarPreviewEjercicios() {
   previewEjercicios.innerHTML = "";
 
-  /* Traemos solo los <div> directos (los <button> de borrar los ignoramos) */
-  const ejerciciosDivs = document.querySelectorAll("#lista-ejercicios > div");
+  /* Traemos los bloques de día (.dia-grupo) — cada uno ya tiene su estructura
+     interna con grupo muscular y ejercicios anidados */
+  const bloquesDia = document.querySelectorAll("#lista-ejercicios > div.dia-grupo");
 
-  if (ejerciciosDivs.length === 0) {
+  if (bloquesDia.length === 0) {
     /* Sin ejercicios: mostramos el estado vacío */
     const vacio = document.createElement("p");
     vacio.className = "vacio";
@@ -97,12 +98,13 @@ function actualizarPreviewEjercicios() {
     return;
   }
 
-  /* Copiamos el texto de cada tarjeta de ejercicio a la preview */
-  ejerciciosDivs.forEach(div => {
-    const item = document.createElement("div");
-    item.className = "preview-ejercicio";
-    item.textContent = div.textContent;
-    previewEjercicios.appendChild(item);
+  /* Clonamos cada bloque de día con toda su estructura interna (header,
+      grupos musculares, ejercicios) y le sacamos los botones "Borrar"
+      porque en la preview no queremos acciones, solo la info */
+  bloquesDia.forEach(bloque => {
+    const clon = bloque.cloneNode(true); // true = copia los hijos también
+    clon.querySelectorAll("button").forEach(btn => btn.remove());
+    previewEjercicios.appendChild(clon);
   });
 }
 

@@ -7,8 +7,8 @@
       "peso": 64,
       "estatura": 1.68,
       "objetivo": "Ganar fuerza",
-      "sugerencia": "Subir 2.5 kg en sentadilla la próxima semana.",
-      "dificultades": ""
+      "sugerencia": ".",
+      "dificultades": "le cuesta la profundidad en sentadilla\n"
     },
     {
       "id": 2,
@@ -29,16 +29,28 @@
       "sugerencia": "",
       "dificultades": "",
       "id": 3
+    },
+    {
+      "nombre": "juan Pablo",
+      "edad": 19,
+      "peso": 120,
+      "estatura": 182,
+      "objetivo": "bajar grasa",
+      "sugerencia": "subir 4 kg la proxima semana en press banca",
+      "dificultades": "le cuesta bajar profundo en sentadilla\n",
+      "id": 4
     }
   ],
   "rutinas": [
     {
-      "personaId": "1",
+      "personaId": "4",
       "nombre": "fuerza intensa",
       "dias": [
         "Lunes",
         "Martes",
-        "Miércoles"
+        "Miércoles",
+        "Jueves",
+        "Viernes"
       ],
       "id": 1
     }
@@ -46,20 +58,147 @@
   "ejercicios": [
     {
       "rutinaId": "1",
-      "nombre": "sentadilla",
+      "dia": "Lunes",
+      "grupoMuscular": "Pecho",
+      "nombre": "press banca con barra ",
       "series": 4,
       "repeticiones": 12,
-      "descanso": "90sg",
+      "descanso": "240sg",
+      "id": 1
+    },
+    {
+      "rutinaId": "1",
+      "dia": "Lunes",
+      "grupoMuscular": "Pecho",
+      "nombre": "press banca con mancuerna",
+      "series": 3,
+      "repeticiones": 12,
+      "descanso": "240sg",
       "id": 2
+    },
+    {
+      "rutinaId": "1",
+      "dia": "Lunes",
+      "grupoMuscular": "Pecho",
+      "nombre": "Cruce en Poleas",
+      "series": 4,
+      "repeticiones": 15,
+      "descanso": "",
+      "id": 3
+    },
+    {
+      "rutinaId": "1",
+      "dia": "Lunes",
+      "grupoMuscular": "triceps",
+      "nombre": "extensiones",
+      "series": 3,
+      "repeticiones": 15,
+      "descanso": "90sg",
+      "id": 4
+    },
+    {
+      "rutinaId": "1",
+      "dia": "Lunes",
+      "grupoMuscular": "triceps",
+      "nombre": "frances con mancuerna",
+      "series": 3,
+      "repeticiones": 15,
+      "descanso": "90sg",
+      "id": 5
+    },
+    {
+      "rutinaId": "1",
+      "dia": "Lunes",
+      "grupoMuscular": "abdominales",
+      "nombre": "elevacion de tronco",
+      "series": 4,
+      "repeticiones": 25,
+      "descanso": "90",
+      "id": 6
     }
   ],
   "dietas": [
     {
       "rutinaId": "1",
-      "momento": "desayuno",
-      "descripcion": "huevos",
-      "id": 1
+      "momento": "almuerzo",
+      "descripcion": "200g de pollo con 100g de arroz y verduras a eleccion",
+      "id": 2
     }
   ],
-  "historial": []
+  "historial": [
+    {
+      "personaId": "4",
+      "rutinaId": 1,
+      "ejercicio": "press banca",
+      "peso": "20",
+      "repeticiones": "12",
+      "dificultad": "fácil",
+      "fecha": "2026-06-23",
+      "id": 1
+    },
+    {
+      "personaId": "4",
+      "rutinaId": "1",
+      "ejercicio": "press banca con barra ",
+      "peso": "120",
+      "fecha": "2026-06-23",
+      "id": 2
+    },
+    {
+      "personaId": "4",
+      "rutinaId": "1",
+      "ejercicio": "press banca con mancuerna",
+      "peso": "2",
+      "fecha": "2026-06-23",
+      "id": 3
+    },
+    {
+      "personaId": "4",
+      "rutinaId": "1",
+      "ejercicio": "Cruce en Poleas",
+      "peso": "4",
+      "fecha": "2026-06-23",
+      "id": 5
+    },
+    {
+      "personaId": "4",
+      "rutinaId": "1",
+      "ejercicio": "extensiones",
+      "peso": "2",
+      "fecha": "2026-06-23",
+      "id": 9
+    },
+    {
+      "personaId": "4",
+      "rutinaId": "1",
+      "ejercicio": "frances con mancuerna",
+      "peso": "33",
+      "fecha": "2026-06-23",
+      "id": 10
+    },
+    {
+      "personaId": "4",
+      "rutinaId": "1",
+      "ejercicio": "press banca con barra",
+      "peso": "1.5",
+      "fecha": "2026-06-23",
+      "id": 13
+    },
+    {
+      "personaId": "4",
+      "rutinaId": "1",
+      "ejercicio": "press banca con barra",
+      "peso": "4.5",
+      "fecha": "2026-06-23",
+      "id": 14
+    }
+  ],
+  "diasTitulos": [
+    {
+      "rutinaId": "1",
+      "dia": "Lunes",
+      "titulo": "Pecho y Triceps",
+      "id": 1
+    }
+  ]
 }
