@@ -1408,6 +1408,36 @@ fieldset label:has(input:checked) {
   color: var(--texto);
 }
 
+/* Input inline al editar un registro */
+.progreso-registro__input {
+  width: 60px;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.78rem;
+  background: var(--carbon-medio);
+  border: 1px solid var(--naranja);
+  border-radius: var(--radio-sm);
+  color: var(--texto);
+}
+
+/* Botones ✏ y ✕ de cada registro */
+.btn-registro {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.72rem;
+  padding: 0 0.2rem;
+  line-height: 1;
+  opacity: 0.4;
+  transition: opacity var(--transicion);
+}
+
+.progreso-registro:hover .btn-registro {
+  opacity: 1;
+}
+
+.btn-registro--editar { color: var(--azul-suave); }
+.btn-registro--borrar { color: var(--error); }
+
 /* ================================================================
   22. ACORDEÓN DE DÍAS (historial interactivo)
 

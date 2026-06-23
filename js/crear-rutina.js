@@ -5,10 +5,11 @@
    rutinasEnMemoria: guarda el array de rutinas para poblar los selects
                      de día sin hacer un GET extra cada vez.
 */
-let personaElegida   = null;
-let rutinaElegida    = null;
-let rutinaEditando   = null;
-let rutinasEnMemoria = [];
+let personaElegida      = null;
+let rutinaElegida       = null;
+let rutinaEditando      = null;
+let ejercicioEditando   = null;   // null = modo crear | id = modo editar ejercicio
+let rutinasEnMemoria    = [];
 
 /* ---------- PASO 1: llenar el selector de personas ----------
    - Traé las personas con axios.get(".../personas").
@@ -218,10 +219,25 @@ document.getElementById("formulario-rutina").addEventListener("submit", async (e
    - En el botón "Borrar" de cada tarjeta, al hacer click:
       axios.delete(".../rutinas/" + id)  y después volvé a mostrar las rutinas.
 */
-const borrarRutina = async (id)=>{
-   await axios.delete("http://localhost:3000/rutinas/"+id)
-   mostrarRutina(personaElegida)
-}
+const borrarRutina = async (id) => {
+   // eliminación en cascada: primero ejercicios, diasTitulos, dietas e historial
+   const [respEj, respTit, respDiet, respHist] = await Promise.all([
+      axios.get(`http://localhost:3000/ejercicios?rutinaId=${id}`),
+      axios.get(`http://localhost:3000/diasTitulos?rutinaId=${id}`),
+      axios.get(`http://localhost:3000/dietas?rutinaId=${id}`),
+      axios.get(`http://localhost:3000/historial?rutinaId=${id}`)
+   ]);
+
+   await Promise.all([
+      ...respEj.data.map(e  => axios.delete(`http://localhost:3000/ejercicios/${e.id}`)),
+      ...respTit.data.map(t => axios.delete(`http://localhost:3000/diasTitulos/${t.id}`)),
+      ...respDiet.data.map(d => axios.delete(`http://localhost:3000/dietas/${d.id}`)),
+      ...respHist.data.map(h => axios.delete(`http://localhost:3000/historial/${h.id}`))
+   ]);
+
+   await axios.delete(`http://localhost:3000/rutinas/${id}`);
+   mostrarRutina(personaElegida);
+};
 
 /* ---------- PASO 6: títulos de cada día ----------
    Cada día de una rutina puede tener un título que describe qué grupos
@@ -396,11 +412,16 @@ const mostrarEjercicios = async (rutinaId) => {
             divEjercicio.className = "ejercicio-tarjeta";
             divEjercicio.textContent = `${ejercicio.nombre} — ${ejercicio.series} series × ${ejercicio.repeticiones} reps · ${ejercicio.descanso}`;
 
+            const botonEditar = document.createElement("button");
+            botonEditar.textContent = "Editar";
+            botonEditar.addEventListener("click", () => activarModoEdicionEjercicio(ejercicio));
+
             const botonBorrar = document.createElement("button");
             botonBorrar.textContent = "Borrar";
             botonBorrar.addEventListener("click", () => borrarEjercicio(ejercicio.id));
 
             divGrupo.appendChild(divEjercicio);
+            divGrupo.appendChild(botonEditar);
             divGrupo.appendChild(botonBorrar);
          });
 
@@ -411,7 +432,33 @@ const mostrarEjercicios = async (rutinaId) => {
    });
 };
 
-/* ---------- PASO 7b: borrar un ejercicio ----------
+/* ---------- PASO 7b: modo edición de ejercicio ----------
+   Mismo patrón que activarModoEdicion de rutinas:
+   pre-llena el formulario con los datos del ejercicio y cambia el botón.
+*/
+const activarModoEdicionEjercicio = (ejercicio) => {
+   ejercicioEditando = ejercicio.id;
+   document.getElementById("ejercicio-dia").value          = ejercicio.dia          || "";
+   document.getElementById("ejercicio-grupo").value        = ejercicio.grupoMuscular || "";
+   document.getElementById("ejercicio-nombre").value       = ejercicio.nombre;
+   document.getElementById("ejercicio-series").value       = ejercicio.series;
+   document.getElementById("ejercicio-repeticiones").value = ejercicio.repeticiones;
+   document.getElementById("ejercicio-descanso").value     = ejercicio.descanso;
+   document.getElementById("btn-submit-ejercicio").textContent = "Guardar cambios";
+   document.getElementById("btn-cancelar-edicion-ejercicio").style.display = "inline-block";
+};
+
+const desactivarModoEdicionEjercicio = () => {
+   ejercicioEditando = null;
+   document.getElementById("formulario-ejercicio").reset();
+   poblarSelectoresDia(rutinaElegida);
+   document.getElementById("btn-submit-ejercicio").textContent = "Agregar ejercicio";
+   document.getElementById("btn-cancelar-edicion-ejercicio").style.display = "none";
+};
+
+document.getElementById("btn-cancelar-edicion-ejercicio").addEventListener("click", desactivarModoEdicionEjercicio);
+
+/* ---------- PASO 7c: borrar un ejercicio ----------
    - Recibís el id del ejercicio a borrar.
    - Hacé axios.delete(".../ejercicios/" + id).
    - Recargá la lista llamando mostrarEjercicios(rutinaElegida).
@@ -441,19 +488,20 @@ document.getElementById("formulario-ejercicio").addEventListener("submit", async
    const repeticiones  = Number(document.getElementById("ejercicio-repeticiones").value);
    const descanso      = document.getElementById("ejercicio-descanso").value;
 
-   await axios.post("http://localhost:3000/ejercicios", {
-      rutinaId: rutinaElegida,
-      dia,
-      grupoMuscular,
-      nombre,
-      series,
-      repeticiones,
-      descanso
-   });
+   if (ejercicioEditando) {
+      await axios.patch(`http://localhost:3000/ejercicios/${ejercicioEditando}`, {
+         dia, grupoMuscular, nombre, series, repeticiones, descanso
+      });
+      desactivarModoEdicionEjercicio();
+   } else {
+      await axios.post("http://localhost:3000/ejercicios", {
+         rutinaId: rutinaElegida,
+         dia, grupoMuscular, nombre, series, repeticiones, descanso
+      });
+      document.getElementById("formulario-ejercicio").reset();
+      poblarSelectoresDia(rutinaElegida);
+   }
 
-   document.getElementById("formulario-ejercicio").reset();
-   // volvemos a poblar el select de día porque .reset() lo puede vaciar
-   poblarSelectoresDia(rutinaElegida);
    mostrarEjercicios(rutinaElegida);
 });
 

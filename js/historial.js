@@ -478,10 +478,30 @@ function dibujarProgresoEjercicios(ejercicios) {
                 else if (pesoActual < pesoAnterior) indicador = " ↓";
             }
 
-            fila.innerHTML = `
-                <span class="progreso-registro__fecha">${reg.fecha}</span>
-                <span class="progreso-registro__peso">${reg.peso} kg${indicador}</span>
-            `;
+            const spanFecha = document.createElement("span");
+            spanFecha.className   = "progreso-registro__fecha";
+            spanFecha.textContent = reg.fecha;
+
+            const spanPeso = document.createElement("span");
+            spanPeso.className   = "progreso-registro__peso";
+            spanPeso.textContent = `${reg.peso} kg${indicador}`;
+
+            const btnEditar = document.createElement("button");
+            btnEditar.className   = "btn-registro btn-registro--editar";
+            btnEditar.textContent = "✏";
+            btnEditar.title       = "Editar peso";
+            btnEditar.addEventListener("click", () => activarEdicionRegistro(reg, fila, ejercicios));
+
+            const btnBorrar = document.createElement("button");
+            btnBorrar.className   = "btn-registro btn-registro--borrar";
+            btnBorrar.textContent = "✕";
+            btnBorrar.title       = "Borrar registro";
+            btnBorrar.addEventListener("click", () => borrarRegistroHistorial(reg.id, ejercicios));
+
+            fila.appendChild(spanFecha);
+            fila.appendChild(spanPeso);
+            fila.appendChild(btnEditar);
+            fila.appendChild(btnBorrar);
             lista.appendChild(fila);
         });
 
@@ -492,6 +512,55 @@ function dibujarProgresoEjercicios(ejercicios) {
     if (!hayRegistros) {
         contenedor.innerHTML += "<p class='vacio'>Todavía no hay pesos registrados para esta rutina.</p>";
     }
+}
+
+
+/* ---------- PASO 8: editar y borrar registros del historial ----------
+
+    activarEdicionRegistro: convierte la fila en un input inline para editar
+    el peso. Al guardar hace PATCH /historial/:id y refresca todo.
+
+    borrarRegistroHistorial: DELETE /historial/:id y refresca.
+*/
+function activarEdicionRegistro(reg, filaElement, ejercicios) {
+    // evitar doble apertura si ya está en modo edición
+    if (filaElement.querySelector("input")) return;
+
+    // reemplazamos el span de peso por un input editable
+    const spanPeso = filaElement.querySelector(".progreso-registro__peso");
+    const inputPeso = document.createElement("input");
+    inputPeso.type  = "number";
+    inputPeso.value = reg.peso;
+    inputPeso.min   = "0";
+    inputPeso.step  = "0.5";
+    inputPeso.className = "progreso-registro__input";
+    spanPeso.replaceWith(inputPeso);
+
+    // cambiamos el botón ✏ por "Guardar"
+    const btnEditar = filaElement.querySelector(".btn-registro--editar");
+    btnEditar.textContent = "✓";
+    btnEditar.title       = "Guardar";
+
+    // al hacer click en ✓ → PATCH y redibujamos
+    btnEditar.replaceWith(btnEditar.cloneNode(true)); // limpiamos el listener viejo
+    const btnGuardar = filaElement.querySelector(".btn-registro--editar");
+    btnGuardar.addEventListener("click", async () => {
+        const nuevoPeso = inputPeso.value.trim();
+        if (!nuevoPeso) return;
+        await axios.patch(`${URL_BASE}/historial/${reg.id}`, { peso: nuevoPeso });
+        await cargarHistorial();
+        await cargarEjerciciosRutina(selectorRutinaHistorial.value);
+        mostrarToast("¡Registro actualizado!");
+    });
+
+    inputPeso.focus();
+}
+
+async function borrarRegistroHistorial(id, ejercicios) {
+    await axios.delete(`${URL_BASE}/historial/${id}`);
+    await cargarHistorial();
+    await cargarEjerciciosRutina(selectorRutinaHistorial.value);
+    mostrarToast("Registro eliminado.");
 }
 
 
