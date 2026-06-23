@@ -71,6 +71,7 @@ PATCH      /rutinas/:id
 DELETE     /rutinas/:id
 
 GET/POST   /ejercicios?rutinaId=1
+PATCH      /ejercicios/:id
 DELETE     /ejercicios/:id
 
 GET/POST   /diasTitulos?rutinaId=1
@@ -80,6 +81,8 @@ GET/POST   /dietas?rutinaId=1
 DELETE     /dietas/:id
 
 GET/POST   /historial
+PATCH      /historial/:id
+DELETE     /historial/:id
 ```
 
 ---
@@ -94,8 +97,9 @@ GET/POST   /historial
 
 **Columna central — Rutina (tabs)**
 - Crear / editar / borrar rutinas con días de la semana
+- Borrar rutina elimina en cascada: ejercicios, diasTitulos, dietas e historial asociados
 - Asignar títulos por día (ej: "Lunes — Pecho y Tríceps")
-- Agregar ejercicios con: día, grupo muscular, series, reps, descanso
+- Crear / editar / borrar ejercicios con: día, grupo muscular, series, reps, descanso
 - Vista agrupada: Día → Grupo muscular → Ejercicios
 - Dieta por rutina: momento + descripción
 
@@ -111,6 +115,8 @@ GET/POST   /historial
 **Columna izquierda — Persona y progreso**
 - Selector de persona
 - **Progreso de cargas**: últimos 5 pesos por ejercicio con flechas ↑/↓
+- Editar peso de un registro (✏ inline) → PATCH /historial/:id
+- Borrar registro (✕) → DELETE /historial/:id
 - Formulario de sugerencias del entrenador (próximos cambios)
 - Formulario de ejercicios que le cuestan a la persona
 
