@@ -24,6 +24,7 @@
       16. Estados vacíos y mensajes
       17. Scrollbar y selección de texto
       18. Responsive (pantallas chicas)
+      19. Toast de confirmación
 ================================================================ */
 
 /* ================================================================
@@ -117,10 +118,10 @@ body::before {
 
 /* Cada página usa su propia imagen de fondo a través de una clase en <body> */
 .fondo-1::before {
-  background-image: url("img/img1.jpg");
+  background-image: url("img/img1.webp");
 } /* index.html     */
 .fondo-2::before {
-  background-image: url("img/img4.jpg");
+  background-image: url("img/img4.webp");
 } /* crear-rutina   */
 .fondo-3::before {
   background-image: url("img/img3.avif");
@@ -248,7 +249,7 @@ p {
   content: "";
   position: absolute;
   inset: 0;
-  background: url("img/img2.jpg") center / cover no-repeat;
+  background: url("img/img2.webp") center / cover no-repeat;
   transition: transform 0.5s ease;
 }
 
@@ -277,7 +278,7 @@ p {
   content: "";
   position: absolute;
   inset: 0;
-  background: url("img/img1.jpg") center / cover no-repeat;
+  background: url("img/img1.webp") center / cover no-repeat;
   transition: transform 0.5s ease;
 }
 
@@ -1211,6 +1212,34 @@ fieldset label:has(input:checked) {
   .datos-grilla {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* ================================================================
+  19. TOAST DE CONFIRMACIÓN
+================================================================ */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: var(--carbon);
+  border: 1px solid var(--exito);
+  color: var(--exito);
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radio-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  pointer-events: none;
+}
+
+.toast.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Respeta preferencia del sistema de no animar */

@@ -28,21 +28,16 @@ const inputSugerencia           = document.getElementById("texto-sugerencia");
 const formularioDificultades    = document.getElementById("formulario-dificultades");
 const inputDificultades         = document.getElementById("texto-dificultades");
 
-/* ---------- PASO 0B: modal de confirmación ----------
-    Reemplaza el alert() nativo del navegador con un modal propio.
-    mostrarModal(mensaje): inyecta el texto y activa la clase "activo".
-    El botón Aceptar la cierra removiendo esa clase.
+/* ---------- PASO 0B: toast de confirmación ----------
+    Muestra un mensaje breve en la esquina inferior derecha y lo oculta
+    automáticamente después de 2.5 segundos.
 */
-function mostrarModal(mensaje) {
-    const overlay = document.getElementById("modal-overlay");
-    const texto   = document.getElementById("modal-mensaje");
-    texto.textContent = mensaje;
-    overlay.classList.add("activo");
+function mostrarToast(mensaje) {
+    const toast = document.getElementById("toast");
+    toast.textContent = mensaje;
+    toast.classList.add("visible");
+    setTimeout(() => toast.classList.remove("visible"), 2500);
 }
-
-document.getElementById("modal-boton-ok").addEventListener("click", () => {
-    document.getElementById("modal-overlay").classList.remove("activo");
-});
 
 
 /* ---------- PASO 1: llenar el selector de personas ----------
@@ -360,7 +355,7 @@ formularioSugerencia.addEventListener("submit", async (e) => {
             sugerencia: textoSugerencia
         });
 
-        mostrarModal("¡Sugerencia guardada con éxito!");
+        mostrarToast("¡Sugerencia guardada!");
         await cargarNotasPersona(personaElegida);
         await cargarHistorial(textoSugerencia);
 
@@ -376,7 +371,7 @@ formularioDificultades.addEventListener("submit", async (e) => {
         await axios.patch(`${URL_BASE}/personas/${personaElegida}`, {
             dificultades: inputDificultades.value
         });
-        mostrarModal("¡Notas guardadas!");
+        mostrarToast("¡Notas guardadas!");
     } catch (error) {
         console.error("Error al guardar dificultades:", error);
     }
