@@ -24,7 +24,10 @@
       16. Estados vacíos y mensajes
       17. Scrollbar y selección de texto
       18. Responsive (pantallas chicas)
-      19. Toast de confirmación
+      19. Ejercicios agrupados por día y grupo muscular
+      20. Toast de confirmación
+      21. Progreso de cargas (historial)
+      22. Acordeón de días (historial interactivo)
 ================================================================ */
 
 /* ================================================================
@@ -48,6 +51,8 @@
   --blanco: #ffffff;
   --error: #ff4444;
   --exito: #22c55e;
+  --azul: #3b82f6;
+  --azul-suave: #60a5fa;
 
   /* Bordes redondeados */
   --radio-sm: 6px;
@@ -469,7 +474,7 @@ button[type="button"]:hover {
 ================================================================ */
 .pagina--dos-columnas {
   display: grid;
-  grid-template-columns: 320px 1fr 260px; /* izq: persona | centro: tabs | der: preview */
+  grid-template-columns: 340px 1fr 390px; /* izq: persona | centro: tabs | der: preview */
   gap: 1.5rem;
   height: calc(100vh - 64px); /* 64px = alto del nav */
   padding: 1.5rem 2rem;
@@ -495,6 +500,12 @@ button[type="button"]:hover {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* En historial, pagina__derecha tiene clase extra .bloque y no usa tabs,
+   entonces necesita su propio scroll (no hay panel interno que lo maneje) */
+.pagina__derecha.bloque {
+  overflow-y: auto;
 }
 
 /* El contenedor de tabs crece para llenar la columna derecha */
@@ -550,6 +561,7 @@ button[type="button"]:hover {
   font-weight: 700;
   color: var(--texto);
   line-height: 1.2;
+  text-align: center;
 }
 
 /* Cuando no hay nombre todavía: texto gris apagado */
@@ -614,6 +626,37 @@ button[type="button"]:hover {
 }
 
 /* Enlace para ir a modificar la rutina desde el preview */
+/* Bloques de notas del entrenador dentro de la tarjeta preview */
+.preview-nota {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--texto-suave);
+  white-space: pre-wrap;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radio-sm);
+  margin-top: 0.5rem;
+}
+
+.preview-nota--sugerencia {
+  background: rgba(59, 130, 246, 0.06);
+  border-left: 2px solid var(--azul-suave);
+}
+
+.preview-nota--dificultades {
+  background: rgba(255, 92, 0, 0.06);
+  border-left: 2px solid var(--naranja);
+}
+
+.preview-nota__label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.25rem;
+  color: var(--texto-muted);
+}
+
 .btn-modificar-rutina {
   display: block;
   text-align: center;
@@ -1215,7 +1258,285 @@ fieldset label:has(input:checked) {
 }
 
 /* ================================================================
-  19. TOAST DE CONFIRMACIÓN
+  19. EJERCICIOS AGRUPADOS POR DÍA Y GRUPO MUSCULAR
+
+  Jerarquía visual:
+    .dia-grupo           → bloque de un día (ej: "Lunes — Pecho y Bíceps")
+    .dia-grupo__header   → encabezado naranja del día
+    .grupo-muscular      → caja interior por grupo muscular (ej: "Pecho")
+    .grupo-muscular__titulo → etiqueta del grupo en mayúsculas
+    .ejercicio-tarjeta   → una fila por ejercicio dentro del grupo
+    .subtitulo-seccion   → h3 separador dentro de un tab (ej: "Títulos de días")
+    .tarjeta-titulo-dia  → fila que muestra "Lunes — Pecho y Bíceps" en la lista
+================================================================ */
+
+/* Subtítulo separador dentro de un panel (aparece entre el form de títulos
+   y el form de ejercicios) */
+.subtitulo-seccion {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 1.5rem;
+  margin-bottom: 0.25rem;
+  border-top: 1px solid var(--borde);
+  padding-top: 1rem;
+}
+
+/* Fila de título guardado (ej: "Lunes — Pecho y Bíceps") en #lista-titulos-dia */
+.tarjeta-titulo-dia {
+  font-size: 0.88rem;
+  color: var(--naranja-suave);
+  padding: 0.3rem 0;
+}
+
+/* Bloque de un día completo dentro de #lista-ejercicios o el preview */
+/* Bloque de un día — borde izquierdo azul para distinguirlo del naranja de ejercicios */
+.dia-grupo {
+  background: rgba(26, 26, 26, 0.6);
+  border: 1px solid var(--borde);
+  border-left: 3px solid var(--azul);
+  border-radius: var(--radio);
+  padding: 0.75rem 1rem;
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* Título del día en azul: "Lunes — Pecho y Bíceps" */
+.dia-grupo__header {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--azul-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Caja de un grupo muscular (ej: "Pecho") dentro del bloque de día */
+.grupo-muscular {
+  background: rgba(36, 36, 36, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radio-sm);
+  padding: 0.6rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* Subtítulo del grupo muscular en naranja */
+.grupo-muscular__titulo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--naranja);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.2rem;
+}
+
+/* Una fila por ejercicio dentro del grupo — texto claro */
+.ejercicio-tarjeta {
+  font-size: 0.88rem;
+  color: var(--texto);
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ejercicio-tarjeta:last-of-type {
+  border-bottom: none;
+}
+
+/* Títulos y subtítulos centrados solo dentro de la tarjeta de preview */
+.tarjeta-preview .dia-grupo__header,
+.tarjeta-preview .grupo-muscular__titulo {
+  text-align: center;
+}
+
+/* ================================================================
+  21. PROGRESO DE CARGAS (columna izquierda del historial)
+
+  .progreso-ejercicio         → bloque de un ejercicio con su historial
+  .progreso-ejercicio__nombre → nombre del ejercicio (naranja, uppercase)
+  .progreso-ejercicio__registros → contenedor de filas de registros
+  .progreso-registro          → fila: fecha + peso + indicador ↑/↓
+================================================================ */
+
+/* Un ejercicio con sus registros */
+.progreso-ejercicio {
+  border-left: 2px solid var(--borde);
+  padding-left: 0.75rem;
+  margin-top: 1rem;
+}
+
+/* Nombre del ejercicio */
+.progreso-ejercicio__nombre {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--naranja);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
+
+/* Contenedor de filas */
+.progreso-ejercicio__registros {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+/* Fila individual: fecha · peso · indicador */
+.progreso-registro {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.progreso-registro__fecha {
+  color: var(--texto-muted);
+  font-size: 0.74rem;
+}
+
+/* El peso cambia de color según el indicador */
+.progreso-registro__peso {
+  font-weight: 500;
+  color: var(--texto);
+}
+
+/* ================================================================
+  22. ACORDEÓN DE DÍAS (historial interactivo)
+
+  .dia-acordeon        → bloque de un día, borde azul
+  .dia-acordeon__header → header clickeable (cursor pointer)
+  .dia-acordeon__body  → contenido colapsable (oculto por defecto)
+  .dia-acordeon__body.abierto → visible
+
+  .ejercicio-item      → fila clickeable para mostrar el form de peso
+  .ejercicio-item__info → nombre + detalle del ejercicio
+  .ejercicio-item__form → input inline (oculto por defecto)
+  .ejercicio-item.activo .ejercicio-item__form → visible
+================================================================ */
+
+/* Bloque de un día en el historial */
+.dia-acordeon {
+  border: 1px solid var(--borde);
+  border-left: 3px solid var(--azul);
+  border-radius: var(--radio);
+  margin-top: 1rem;
+  overflow: hidden;
+}
+
+/* Header clickeable del día */
+.dia-acordeon__header {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--azul-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  background: rgba(59, 130, 246, 0.06);
+  transition: background var(--transicion);
+  user-select: none;
+}
+
+.dia-acordeon__header:hover {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+/* Cuerpo del acordeón: oculto por defecto */
+.dia-acordeon__body {
+  display: none;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+/* Cuando tiene la clase .abierto se muestra */
+.dia-acordeon__body.abierto {
+  display: flex;
+}
+
+/* Ejercicio individual dentro del acordeón */
+.ejercicio-item {
+  border-radius: var(--radio-sm);
+  border: 1px solid transparent;
+  transition: border-color var(--transicion);
+  overflow: hidden;
+}
+
+/* Info del ejercicio: clickeable */
+.ejercicio-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.6rem;
+  cursor: pointer;
+  border-radius: var(--radio-sm);
+  transition: background var(--transicion);
+}
+
+.ejercicio-item__info:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Nombre del ejercicio */
+.ejercicio-item__nombre {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+/* Series, reps y descanso */
+.ejercicio-item__detalle {
+  font-size: 0.78rem;
+  color: var(--texto-muted);
+}
+
+/* Form inline: oculto por defecto */
+.ejercicio-item__form {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  background: rgba(36, 36, 36, 0.8);
+  border-top: 1px solid var(--borde);
+}
+
+/* Form visible cuando el ítem tiene clase .activo */
+.ejercicio-item.activo {
+  border-color: var(--naranja);
+}
+
+.ejercicio-item.activo .ejercicio-item__form {
+  display: flex;
+}
+
+/* Input de peso dentro del form inline */
+.ejercicio-item__form input[type="number"] {
+  width: 90px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.875rem;
+  background: var(--carbon-medio);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  color: var(--texto);
+  outline: none;
+}
+
+.ejercicio-item__form input[type="number"]:focus {
+  border-color: var(--naranja);
+  box-shadow: 0 0 0 2px rgba(255, 92, 0, 0.15);
+}
+
+/* ================================================================
+  20. TOAST DE CONFIRMACIÓN
 ================================================================ */
 .toast {
   position: fixed;

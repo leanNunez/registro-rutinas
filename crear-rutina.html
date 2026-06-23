@@ -64,8 +64,8 @@
             <label for="persona-peso">Peso (kg)</label>
             <input type="number" id="persona-peso" placeholder="64" />
 
-            <label for="persona-estatura">Estatura (m)</label>
-            <input type="number" id="persona-estatura" placeholder="1.68" step="0.01" />
+            <label for="persona-estatura">Estatura (cm)</label>
+            <input type="number" id="persona-estatura" placeholder="168" step="1" />
 
             <label for="persona-objetivo">Objetivo</label>
             <input type="text" id="persona-objetivo" placeholder="Ej: Ganar fuerza" />
@@ -105,7 +105,28 @@
           <label for="selector-rutina">Rutina</label>
           <select id="selector-rutina"></select>
 
+          <!-- 5a) Título de cada día: ej. "Lunes → Pecho y Bíceps" -->
+          <h3 class="subtitulo-seccion">Títulos de días</h3>
+          <form id="formulario-titulo-dia">
+            <label for="selector-dia-titulo">Día</label>
+            <select id="selector-dia-titulo"></select>
+
+            <label for="input-titulo-dia">Título del día</label>
+            <input type="text" id="input-titulo-dia" placeholder="Ej: Pecho y Bíceps" />
+
+            <button type="submit">Guardar título</button>
+          </form>
+          <div id="lista-titulos-dia"></div>
+
+          <!-- 5b) Agregar ejercicio con día y grupo muscular -->
+          <h3 class="subtitulo-seccion">Agregar ejercicio</h3>
           <form id="formulario-ejercicio">
+            <label for="ejercicio-dia">Día</label>
+            <select id="ejercicio-dia"></select>
+
+            <label for="ejercicio-grupo">Grupo muscular</label>
+            <input type="text" id="ejercicio-grupo" placeholder="Ej: Pecho" />
+
             <label for="ejercicio-nombre">Nombre del ejercicio</label>
             <input type="text" id="ejercicio-nombre" placeholder="Ej: Press de banca" />
 

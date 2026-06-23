@@ -31,10 +31,10 @@
         <select id="selector-persona"></select>
       </section>
 
-      <!-- 2) RESUMEN: el JS escribe las métricas acá -->
-      <section class="bloque">
-        <h2>Resumen</h2>
-        <div id="resumen"></div>
+      <!-- 2) PROGRESO POR EJERCICIO — el JS dibuja acá los últimos pesos -->
+      <section class="bloque" id="progreso-ejercicios">
+        <h2>Progreso de cargas</h2>
+        <p class="vacio">Seleccioná una rutina para ver el progreso.</p>
       </section>
 
       <!-- 3) SUGERENCIA DEL ENTRENADOR -->
@@ -56,52 +56,15 @@
       </section>
     </div>
 
-    <!-- ===== COLUMNA CENTRAL: tabs ===== -->
-    <div class="pagina__derecha">
-      <div class="tabs">
+    <!-- ===== COLUMNA CENTRAL: rutina interactiva ===== -->
+    <div class="pagina__derecha bloque">
+      <h2>Entrenamiento de hoy</h2>
 
-        <!-- Botones de navegación -->
-        <div class="tabs__nav">
-          <button type="button" class="tabs__btn tabs__btn--activo" data-tab="registrar">Registrar</button>
-          <button type="button" class="tabs__btn" data-tab="registros">Registros</button>
-        </div>
+      <label for="selector-rutina-historial">Rutina</label>
+      <select id="selector-rutina-historial"></select>
 
-        <!-- PANEL: REGISTRAR ENTRENAMIENTO -->
-        <div class="tabs__panel bloque activo" id="tab-registrar">
-          <h2>Registrar entrenamiento</h2>
-          <p>Seleccioná la rutina para ver sus ejercicios y registrar la sesión.</p>
-
-          <form id="formulario-registro">
-            <label for="selector-rutina-historial">Rutina</label>
-            <select id="selector-rutina-historial"></select>
-
-            <label for="registro-ejercicio">Ejercicio</label>
-            <input type="text" id="registro-ejercicio" placeholder="Ej: Sentadilla" maxlength="35" />
-
-            <label for="registro-peso">Peso (kg)</label>
-            <input type="number" id="registro-peso" placeholder="80" />
-
-            <label for="registro-repeticiones">Repeticiones</label>
-            <input type="number" id="registro-repeticiones" placeholder="5" />
-
-            <label for="registro-dificultad">Dificultad</label>
-            <select id="registro-dificultad">
-              <option value="fácil">Fácil</option>
-              <option value="media">Media</option>
-              <option value="alta">Alta</option>
-            </select>
-
-            <button type="submit">Registrar</button>
-          </form>
-        </div>
-
-        <!-- PANEL: LISTA DE REGISTROS -->
-        <div class="tabs__panel bloque" id="tab-registros">
-          <h2>Registros</h2>
-          <div id="lista-historial"></div>
-        </div>
-
-      </div><!-- /tabs -->
+      <!-- El JS dibuja acá los días → grupos → ejercicios con inputs inline -->
+      <div id="lista-rutina-ejercicios"></div>
     </div><!-- /pagina__derecha -->
 
     <!-- ===== COLUMNA DERECHA: preview de la rutina seleccionada ===== -->
@@ -122,6 +85,11 @@
         <div id="preview-rutina-ejercicios" class="tarjeta-preview__ejercicios">
           <p class="vacio">Sin ejercicios</p>
         </div>
+
+        <!-- Notas del entrenador: el JS las escribe acá -->
+        <div class="tarjeta-preview__separador"></div>
+        <div id="preview-sugerencia" class="preview-nota preview-nota--sugerencia" hidden></div>
+        <div id="preview-dificultades" class="preview-nota preview-nota--dificultades" hidden></div>
 
         <!-- Enlace a crear-rutina para editar -->
         <div class="tarjeta-preview__separador"></div>

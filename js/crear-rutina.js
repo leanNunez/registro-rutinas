@@ -1,10 +1,14 @@
-/* ---------- PASO 0: una variable para saber qué persona está elegida ----------
-   Vas a necesitar recordar el id de la persona elegida y el de la rutina elegida.
-   Consejo: declará  let personaElegida  y  let rutinaElegida  arriba de todo.
+/* ---------- PASO 0: variables globales ----------
+   personaElegida:   id de la persona activa entre funciones.
+   rutinaElegida:    id de la rutina activa (para ejercicios, dieta y títulos).
+   rutinaEditando:   null = modo crear | id = modo editar rutina.
+   rutinasEnMemoria: guarda el array de rutinas para poblar los selects
+                     de día sin hacer un GET extra cada vez.
 */
-let personaElegida  = null;
-let rutinaElegida   = null;
-let rutinaEditando  = null; // null = modo crear | id = modo editar
+let personaElegida   = null;
+let rutinaElegida    = null;
+let rutinaEditando   = null;
+let rutinasEnMemoria = [];
 
 /* ---------- PASO 1: llenar el selector de personas ----------
    - Traé las personas con axios.get(".../personas").
@@ -26,7 +30,7 @@ const cargarPersonas = async () => {
    personaElegida = personas[0].id;
 
    mostrarDatosPersona(personaElegida)
-   
+
    // escuchador de cambios en el select
    selectorPersona.addEventListener("change" , ()=>{
       personaElegida = selectorPersona.value
@@ -49,14 +53,19 @@ const mostrarDatosPersona = async (id) => {
    const datosPersona = document.getElementById("datos-persona");
    datosPersona.innerHTML= "";
 
-   const imc = (persona.peso / (persona.estatura * persona.estatura)).toFixed(1);
+   // estatura: datos viejos en metros (<3), datos nuevos en cm (>=3)
+   const estaturaM = persona.estatura >= 3 ? persona.estatura / 100 : persona.estatura;
+   const imc = (persona.peso && estaturaM)
+      ? (persona.peso / (estaturaM * estaturaM)).toFixed(1)
+      : "—";
    // peso
    const parrafoPeso = document.createElement("p");
    parrafoPeso.textContent = `Peso : ${persona.peso} kg`;
    datosPersona.appendChild(parrafoPeso);
    // estatura
    const parrafoEstatura = document.createElement("p");
-   parrafoEstatura.textContent = `Estatura : ${persona.estatura} m`;
+   const estaturaDisplay = persona.estatura >= 3 ? `${persona.estatura} cm` : `${(persona.estatura * 100).toFixed(0)} cm`;
+   parrafoEstatura.textContent = `Estatura : ${estaturaDisplay}`;
    datosPersona.appendChild(parrafoEstatura)
    //objetivo
    const parrafoObjetivo = document.createElement ("p");
@@ -72,25 +81,24 @@ const mostrarDatosPersona = async (id) => {
 
 /* ---------- PASO 3: mostrar las rutinas de la persona ----------
    - Traé las rutinas con axios.get(".../rutinas?personaId=" + id).
-   - Vaciá #lista-rutinas y dibujá una tarjeta con botón "Borrar" por cada rutina (PASO 5).
-   - Llenás también el <select id="selector-rutina"> con las mismas rutinas (para los ejercicios).
+   - Vaciá #lista-rutinas y dibujá una tarjeta con botones "Editar" y "Borrar".
+   - Llenás también el <select id="selector-rutina"> con las mismas rutinas.
+   - Guardá las rutinas en rutinasEnMemoria para usar los días sin GET extra.
    - Si hay al menos una rutina:
          · Guardás rutinaElegida = rutinas[0].id (la primera queda seleccionada).
-         · Llamás mostrarEjercicios(rutinaElegida) para cargar sus ejercicios (PASO 6).
-         · Llamás MostrarDieta(rutinaElegida) para cargar su dieta (PASO 7).
-         · Disparás un evento "change" en #selector-rutina para que preview-rutina.js
-         actualice el nombre en la tarjeta de vista previa.
-   - Si NO hay rutinas (else):
-         · Limpiás #lista-ejercicios y #lista-dieta para que los MutationObservers
-         de preview-rutina.js limpien la vista previa automáticamente.
-         · Disparás el mismo "change" en el selector vacío para que la vista previa
-         resetee el nombre a "Sin nombre".
+         · Llamás mostrarEjercicios, MostrarDieta y poblarSelectoresDia.
+         · Disparás "change" en #selector-rutina para que preview-rutina.js
+            actualice el nombre en la tarjeta de vista previa.
+   - Si NO hay rutinas: limpiás las listas y disparás "change" para resetear el preview.
 */
 const mostrarRutina = async (id) => {
    const respuesta = await axios.get("http://localhost:3000/rutinas?personaId=" + id);
    const rutinas = respuesta.data;
    const listaRutinas = document.getElementById("lista-rutinas");
    listaRutinas.innerHTML = "";
+
+   // guardamos en memoria para que poblarSelectoresDia pueda usarlos sin GET extra
+   rutinasEnMemoria = rutinas;
 
    rutinas.forEach(rutina => {
       const divRutina = document.createElement("div");
@@ -120,18 +128,23 @@ const mostrarRutina = async (id) => {
       selectorRutina.appendChild(option);
    })
 
-   // Si hay al menos una rutina, elegimos la primera y cargamos ejercicios y dieta
+   // Si hay al menos una rutina, elegimos la primera y cargamos todo
    if (rutinas.length > 0) {
       rutinaElegida = rutinas[0].id;
       mostrarEjercicios(rutinaElegida);
       MostrarDieta(rutinaElegida);
+      mostrarTitulosDia(rutinaElegida);
+      poblarSelectoresDia(rutinaElegida);
       // dispara "change" para que preview-rutina.js actualice el nombre en la tarjeta
       document.getElementById("selector-rutina").dispatchEvent(new Event("change"));
    } else {
       // sin rutinas: limpiamos las listas para que los MutationObservers limpien el preview
       rutinaElegida = null;
       document.getElementById("lista-ejercicios").innerHTML = "";
+      document.getElementById("lista-titulos-dia").innerHTML = "";
       document.getElementById("lista-dieta").innerHTML = "";
+      document.getElementById("selector-dia-titulo").innerHTML = "";
+      document.getElementById("ejercicio-dia").innerHTML = "";
       // selector vacío → el listener en preview-rutina.js pondrá "Sin nombre"
       document.getElementById("selector-rutina").dispatchEvent(new Event("change"));
    }
@@ -210,36 +223,195 @@ const borrarRutina = async (id)=>{
    mostrarRutina(personaElegida)
 }
 
-/* ---------- PASO 6: ejercicios (de la rutina elegida) ----------
-   Es el MISMO patrón que rutinas, pero con ejercicios:
-   - Mostrar: axios.get(".../ejercicios?rutinaId=" + rutinaElegida) y dibujar tarjetas.
-   - Crear: leer los inputs (series y repeticiones convertilos con Number(...)),
-      axios.post(".../ejercicios", { rutinaId, nombre, series, repeticiones, descanso }).
-   - Borrar:  axios.delete(".../ejercicios/" + id).
-   - Acordate de recargar la lista al cambiar el #selector-rutina.
-*/
-const mostrarEjercicios = async (id) => {
-   const respuesta = await axios.get("http://localhost:3000/ejercicios?rutinaId=" + id);
-   const ejercicios = respuesta.data;
-   const listaEjercicios = document.getElementById("lista-ejercicios");
-   listaEjercicios.innerHTML = "";
+/* ---------- PASO 6: títulos de cada día ----------
+   Cada día de una rutina puede tener un título que describe qué grupos
+   musculares se trabajan ese día (ej: "Lunes → Pecho y Bíceps").
 
-   ejercicios.forEach(ejercicio => {
-      const divEjercicio = document.createElement("div");
-      divEjercicio.textContent = `${ejercicio.nombre} - ${ejercicio.series} series x ${ejercicio.repeticiones} reps - Descanso: ${ejercicio.descanso}`;
+   mostrarTitulosDia: trae los títulos guardados para la rutina activa y
+   los dibuja en #lista-titulos-dia con un botón Borrar por cada uno.
+
+   El patrón es idéntico al de mostrarEjercicios y MostrarDieta.
+*/
+const mostrarTitulosDia = async (rutinaId) => {
+   const respuesta   = await axios.get("http://localhost:3000/diasTitulos?rutinaId=" + rutinaId);
+   const titulos     = respuesta.data;
+   const listaTitulos = document.getElementById("lista-titulos-dia");
+   listaTitulos.innerHTML = "";
+
+   titulos.forEach(titulo => {
+      const div = document.createElement("div");
+      div.className = "tarjeta-titulo-dia";
+      div.textContent = `${titulo.dia} — ${titulo.titulo}`;
 
       const botonBorrar = document.createElement("button");
       botonBorrar.textContent = "Borrar";
-      botonBorrar.addEventListener("click", () => {
-         borrarEjercicio(ejercicio.id);
+      botonBorrar.addEventListener("click", () => borrarTituloDia(titulo.id));
+
+      listaTitulos.appendChild(div);
+      listaTitulos.appendChild(botonBorrar);
+   });
+};
+
+/* ---------- PASO 6b: borrar un título de día ----------
+   - axios.delete(".../diasTitulos/" + id)
+   - Recargá la lista con mostrarTitulosDia.
+*/
+const borrarTituloDia = async (id) => {
+   await axios.delete("http://localhost:3000/diasTitulos/" + id);
+   mostrarTitulosDia(rutinaElegida);
+};
+
+/* ---------- PASO 6c: guardar el título de un día ----------
+   - Leé el día elegido en #selector-dia-titulo y el texto de #input-titulo-dia.
+   - POST /diasTitulos con { rutinaId, dia, titulo }.
+   - Limpiá el formulario y recargá la lista.
+*/
+document.getElementById("formulario-titulo-dia").addEventListener("submit", async (evento) => {
+   evento.preventDefault();
+
+   const dia    = document.getElementById("selector-dia-titulo").value;
+   const titulo = document.getElementById("input-titulo-dia").value;
+
+   await axios.post("http://localhost:3000/diasTitulos", {
+      rutinaId: rutinaElegida,
+      dia,
+      titulo
+   });
+
+   document.getElementById("formulario-titulo-dia").reset();
+   // volvemos a poblar el select de día porque .reset() lo vaciaría en algunos navegadores
+   poblarSelectoresDia(rutinaElegida);
+   mostrarTitulosDia(rutinaElegida);
+});
+
+/* ---------- PASO 6d: poblar los selects de día ----------
+   Cuando cambia la rutina elegida, los dos selects de día (el del form
+   de títulos y el del form de ejercicios) tienen que mostrar solo los
+   días de ESA rutina.
+
+   Buscamos la rutina en rutinasEnMemoria para no hacer un GET extra.
+   Vaciamos y rellenamos ambos selects con los días de esa rutina.
+*/
+const poblarSelectoresDia = (rutinaId) => {
+   // buscamos la rutina en memoria (ya la tenemos del PASO 3)
+   const rutina = rutinasEnMemoria.find(r => String(r.id) === String(rutinaId));
+   if (!rutina) return;
+
+   const selectorTitulo   = document.getElementById("selector-dia-titulo");
+   const selectorEjercicio = document.getElementById("ejercicio-dia");
+
+   // vaciamos y rellenamos ambos selects con los días de la rutina
+   selectorTitulo.innerHTML   = "";
+   selectorEjercicio.innerHTML = "";
+
+   rutina.dias.forEach(dia => {
+      // un <option> para el select de títulos
+      const opcionTitulo = document.createElement("option");
+      opcionTitulo.value = dia;
+      opcionTitulo.textContent = dia;
+      selectorTitulo.appendChild(opcionTitulo);
+
+      // otro <option> para el select del formulario de ejercicios
+      const opcionEjercicio = document.createElement("option");
+      opcionEjercicio.value = dia;
+      opcionEjercicio.textContent = dia;
+      selectorEjercicio.appendChild(opcionEjercicio);
+   });
+};
+
+/* ---------- PASO 7: mostrar ejercicios agrupados por día y grupo muscular ----------
+   En vez de una lista plana, los ejercicios se muestran en una jerarquía:
+      · Un bloque por día → con su título (ej: "Lunes — Pecho y Bíceps")
+      · Un cuadro por grupo muscular dentro de ese día (ej: "Pecho")
+      · Las tarjetas de cada ejercicio con su botón Borrar
+
+   Traemos ejercicios y títulos a la vez con Promise.all para no esperar
+   una respuesta tras la otra — es más rápido y el patrón es sencillo.
+*/
+const mostrarEjercicios = async (rutinaId) => {
+   // traemos ejercicios y títulos a la vez (en paralelo)
+   const [respEjercicios, respTitulos] = await Promise.all([
+      axios.get("http://localhost:3000/ejercicios?rutinaId=" + rutinaId),
+      axios.get("http://localhost:3000/diasTitulos?rutinaId=" + rutinaId)
+   ]);
+
+   const ejercicios = respEjercicios.data;
+   const titulos    = respTitulos.data;
+
+   // armamos un mapa dia → titulo para acceder rápido (ej: "Lunes" → "Pecho y Bíceps")
+   const mapaTitulos = {};
+   titulos.forEach(t => { mapaTitulos[t.dia] = t.titulo; });
+
+   // agrupamos los ejercicios por día: { "Lunes": [ej1, ej2], "Martes": [ej3] }
+   const porDia = {};
+   ejercicios.forEach(ej => {
+      const dia = ej.dia || "Sin día asignado";
+      if (!porDia[dia]) porDia[dia] = [];
+      porDia[dia].push(ej);
+   });
+
+   const listaEjercicios = document.getElementById("lista-ejercicios");
+   listaEjercicios.innerHTML = "";
+
+   // si no hay ejercicios todavía, mostramos un mensaje vacío
+   if (ejercicios.length === 0) {
+      listaEjercicios.innerHTML = "<p>Sin ejercicios aún.</p>";
+      return;
+   }
+
+   // por cada día dibujamos su bloque con título y grupos musculares
+   Object.keys(porDia).forEach(dia => {
+      const titulo = mapaTitulos[dia] ? `${dia} — ${mapaTitulos[dia]}` : dia;
+
+      // --- bloque del día ---
+      const divDia = document.createElement("div");
+      divDia.className = "dia-grupo";
+
+      const headerDia = document.createElement("div");
+      headerDia.className = "dia-grupo__header";
+      headerDia.textContent = titulo;
+      divDia.appendChild(headerDia);
+
+      // agrupamos los ejercicios de este día por grupo muscular
+      const porGrupo = {};
+      porDia[dia].forEach(ej => {
+         const grupo = ej.grupoMuscular || "Sin grupo";
+         if (!porGrupo[grupo]) porGrupo[grupo] = [];
+         porGrupo[grupo].push(ej);
       });
 
-      listaEjercicios.appendChild(divEjercicio);
-      listaEjercicios.appendChild(botonBorrar);
-   })
-}
+      // por cada grupo muscular dibujamos su cuadro con sus ejercicios
+      Object.keys(porGrupo).forEach(grupo => {
+         const divGrupo = document.createElement("div");
+         divGrupo.className = "grupo-muscular";
 
-/* ---------- PASO 6b: borrar un ejercicio ----------
+         const tituloGrupo = document.createElement("div");
+         tituloGrupo.className = "grupo-muscular__titulo";
+         tituloGrupo.textContent = grupo;
+         divGrupo.appendChild(tituloGrupo);
+
+         // una tarjeta por ejercicio dentro del grupo
+         porGrupo[grupo].forEach(ejercicio => {
+            const divEjercicio = document.createElement("div");
+            divEjercicio.className = "ejercicio-tarjeta";
+            divEjercicio.textContent = `${ejercicio.nombre} — ${ejercicio.series} series × ${ejercicio.repeticiones} reps · ${ejercicio.descanso}`;
+
+            const botonBorrar = document.createElement("button");
+            botonBorrar.textContent = "Borrar";
+            botonBorrar.addEventListener("click", () => borrarEjercicio(ejercicio.id));
+
+            divGrupo.appendChild(divEjercicio);
+            divGrupo.appendChild(botonBorrar);
+         });
+
+         divDia.appendChild(divGrupo);
+      });
+
+      listaEjercicios.appendChild(divDia);
+   });
+};
+
+/* ---------- PASO 7b: borrar un ejercicio ----------
    - Recibís el id del ejercicio a borrar.
    - Hacé axios.delete(".../ejercicios/" + id).
    - Recargá la lista llamando mostrarEjercicios(rutinaElegida).
@@ -249,17 +421,21 @@ const borrarEjercicio = async (id) => {
    mostrarEjercicios(rutinaElegida);
 };
 
-/* ---------- PASO 6c: crear un ejercicio ----------
+/* ---------- PASO 7c: crear un ejercicio ----------
    - Escuchá el "submit" del #formulario-ejercicio (addEventListener).
    - Hacé evento.preventDefault() para que no se recargue la página.
-   - Leé nombre, series, repeticiones y descanso.
+   - Leé: día, grupo muscular, nombre, series, repeticiones y descanso.
    - OJO: series y repeticiones son números → convertílos con Number().
-   - Creá el ejercicio con axios.post(".../ejercicios", { rutinaId, nombre, series, repeticiones, descanso }).
-   - Limpiá el formulario (.reset()) y recargá la lista (PASO 6).
+   - POST /ejercicios con todos los campos.
+   - Limpiá el formulario y recargá la lista.
+   - OJO: después del reset(), volvemos a poblar el select de día porque
+      .reset() lo vacía en algunos navegadores.
 */
 document.getElementById("formulario-ejercicio").addEventListener("submit", async (evento) => {
    evento.preventDefault();
 
+   const dia          = document.getElementById("ejercicio-dia").value;
+   const grupoMuscular = document.getElementById("ejercicio-grupo").value;
    const nombre        = document.getElementById("ejercicio-nombre").value;
    const series        = Number(document.getElementById("ejercicio-series").value);
    const repeticiones  = Number(document.getElementById("ejercicio-repeticiones").value);
@@ -267,6 +443,8 @@ document.getElementById("formulario-ejercicio").addEventListener("submit", async
 
    await axios.post("http://localhost:3000/ejercicios", {
       rutinaId: rutinaElegida,
+      dia,
+      grupoMuscular,
       nombre,
       series,
       repeticiones,
@@ -274,24 +452,27 @@ document.getElementById("formulario-ejercicio").addEventListener("submit", async
    });
 
    document.getElementById("formulario-ejercicio").reset();
+   // volvemos a poblar el select de día porque .reset() lo puede vaciar
+   poblarSelectoresDia(rutinaElegida);
    mostrarEjercicios(rutinaElegida);
 });
 
-/* ---------- PASO 6d: cambiar de rutina en el selector ----------
+/* ---------- PASO 7d: cambiar de rutina en el selector ----------
    - Escuchá el "change" del #selector-rutina (addEventListener).
    - Guardá rutinaElegida con el nuevo valor del select.
-   - Recargá los ejercicios de esa rutina llamando mostrarEjercicios(rutinaElegida).
-   - Recargá también la dieta de esa rutina llamando MostrarDieta(rutinaElegida).
+   - Recargá ejercicios, dieta, títulos y poblá los selects de día.
    - OJO: preview-rutina.js también escucha este mismo evento para actualizar
       el nombre en la tarjeta de vista previa — no hace falta tocarlo acá.
 */
 document.getElementById("selector-rutina").addEventListener("change", () => {
    rutinaElegida = document.getElementById("selector-rutina").value;
    mostrarEjercicios(rutinaElegida);
-   MostrarDieta(rutinaElegida); // la dieta pertenece a la rutina, no a la persona
+   MostrarDieta(rutinaElegida);
+   mostrarTitulosDia(rutinaElegida);
+   poblarSelectoresDia(rutinaElegida);
 });
 
-/* ---------- PASO 7: dieta (de la rutina elegida) ----------
+/* ---------- PASO 8: dieta (de la rutina elegida) ----------
    Mismo patrón que ejercicios, pero para la dieta:
    - Mostrar: axios.get(".../dietas?rutinaId=" + rutinaElegida) y dibujar tarjetas con botón "Borrar".
    - Crear:   leer momento y descripcion, axios.post(".../dietas", { rutinaId, momento, descripcion }).
@@ -340,11 +521,12 @@ const BorrarDieta = async (id)=>{
    MostrarDieta(rutinaElegida)
 }
 
-/* ---------- PASO 8: arrancar ----------
+/* ---------- PASO 9: arrancar ----------
    Llamá a la función del PASO 1 al final del archivo para que todo empiece.
 */
 cargarPersonas();
-/* ---------- PASO 9: agregar una persona ----------
+
+/* ---------- PASO 10: agregar una persona ----------
    - Escuchá el "submit" del #formulario-persona.
    - Hacé evento.preventDefault() para que no se recargue la página.
    - Leé los 5 campos: nombre, edad, peso, estatura, objetivo.

@@ -1,6 +1,9 @@
 /* ============================================================
-    historial.js — Página de historial de entrenamientos.
-    Mismas herramientas que crear-rutina.js: Axios + DOM vanilla.
+    historial.js — Pantalla de entrenamiento activo.
+    Muestra la rutina de la persona con días, grupos musculares
+    y ejercicios. Al hacer clic en un ejercicio aparece un input
+    para registrar el peso de hoy. La preview de la derecha
+    se actualiza automáticamente con el último peso guardado.
    ============================================================ */
 
 const URL_BASE = "http://localhost:3000";
@@ -11,18 +14,14 @@ const URL_BASE = "http://localhost:3000";
     historialActual:    registros del historial activo en memoria, para que
                         dibujarPreviewRutina pueda mostrar el último peso de
                         cada ejercicio sin un GET adicional.
-    Las referencias al DOM se capturan una sola vez para no repetir
-    getElementById / querySelector en cada función.
 */
 let personaElegida      = null;
 let rutinasDisponibles  = [];
 let historialActual     = [];
 
-const formularioRegistro        = document.getElementById("formulario-registro");
 const selectorPersona           = document.getElementById("selector-persona");
 const selectorRutinaHistorial   = document.getElementById("selector-rutina-historial");
-const listaHistorial            = document.getElementById("lista-historial");
-const resumenDiv                = document.getElementById("resumen");
+const listaRutinaEjercicios     = document.getElementById("lista-rutina-ejercicios");
 const formularioSugerencia      = document.getElementById("formulario-sugerencia");
 const inputSugerencia           = document.getElementById("texto-sugerencia");
 const formularioDificultades    = document.getElementById("formulario-dificultades");
@@ -67,8 +66,10 @@ async function cargarPersonas() {
         personaElegida          = String(personas[0].id ?? "").trim();
         selectorPersona.value   = personaElegida;
 
-        await cargarRutinasParaHistorial(personaElegida);
+        // cargarHistorial primero para que historialActual esté listo
+        // cuando dibujarPreviewRutina se ejecute dentro de cargarRutinasParaHistorial
         await cargarHistorial();
+        await cargarRutinasParaHistorial(personaElegida);
         await cargarNotasPersona(personaElegida);
 
     } catch (error) {
@@ -80,13 +81,10 @@ async function cargarPersonas() {
 /* ---------- PASO 2: cambio de persona ----------
     cargarRutinasParaHistorial: GET /rutinas → filtra por personaId y
     llena #selector-rutina-historial con las rutinas de la persona activa.
-    Se filtra con String() para evitar problemas de tipo (1 vs "1").
+    Después de cargar, dibuja la lista interactiva y la preview con la primera rutina.
 
     cargarNotasPersona: GET /personas/:id → muestra la sugerencia guardada
-    en el <textarea #texto-sugerencia>.
-
-    El listener de #selector-persona actualiza personaElegida y llama
-    a las dos funciones anteriores + recarga el historial.
+    en los textareas de la columna izquierda.
 */
 async function cargarRutinasParaHistorial(idPersona) {
     try {
@@ -102,7 +100,9 @@ async function cargarRutinasParaHistorial(idPersona) {
 
         if (rutinas.length === 0) {
             selectorRutinaHistorial.innerHTML = "<option>Sin rutinas</option>";
-            dibujarPreviewRutina({ nombre: "", dias: [] }, []);
+            listaRutinaEjercicios.innerHTML   = "<p>Esta persona no tiene rutinas aún.</p>";
+            dibujarPreviewRutina({ nombre: "", dias: [] }, [], []);
+            dibujarProgresoEjercicios([]);
             return;
         }
 
@@ -113,9 +113,11 @@ async function cargarRutinasParaHistorial(idPersona) {
             selectorRutinaHistorial.appendChild(opcion);
         });
 
-        // Guarda las rutinas en memoria y muestra la primera en el preview
         rutinasDisponibles = rutinas;
+
+        // cargamos la primera rutina: preview + lista interactiva
         await cargarEjerciciosRutina(rutinas[0].id);
+
     } catch (error) {
         console.error("Error al cargar rutinas:", error);
     }
@@ -123,115 +125,246 @@ async function cargarRutinasParaHistorial(idPersona) {
 
 async function cargarNotasPersona(idPersona) {
     try {
-        const respuesta          = await axios.get(`${URL_BASE}/personas/${idPersona}`);
-        const persona            = respuesta.data;
-        inputSugerencia.value    = persona.sugerencia    || "";
-        inputDificultades.value  = persona.dificultades  || "";
+        const respuesta = await axios.get(`${URL_BASE}/personas/${idPersona}`);
+        const persona   = respuesta.data;
+        inputSugerencia.value   = persona.sugerencia   || "";
+        inputDificultades.value = persona.dificultades || "";
+        mostrarNotasEnPreview(persona.sugerencia, persona.dificultades);
     } catch (error) {
         console.error("Error al cargar notas de la persona:", error);
     }
 }
 
+/* Muestra la sugerencia y las dificultades en la tarjeta preview.
+   Si el campo está vacío, oculta el bloque con hidden para no dejar espacio vacío. */
+function mostrarNotasEnPreview(sugerencia, dificultades) {
+    const divSug  = document.getElementById("preview-sugerencia");
+    const divDif  = document.getElementById("preview-dificultades");
+
+    if (sugerencia && sugerencia.trim()) {
+        divSug.innerHTML = `<span class="preview-nota__label">Próximos cambios</span>${sugerencia.trim()}`;
+        divSug.removeAttribute("hidden");
+    } else {
+        divSug.setAttribute("hidden", "");
+    }
+
+    if (dificultades && dificultades.trim()) {
+        divDif.innerHTML = `<span class="preview-nota__label">Ejercicios que cuestan</span>${dificultades.trim()}`;
+        divDif.removeAttribute("hidden");
+    } else {
+        divDif.setAttribute("hidden", "");
+    }
+}
+
 selectorPersona.addEventListener("change", async () => {
     personaElegida = String(selectorPersona.value ?? "").trim();
-    await cargarRutinasParaHistorial(personaElegida);
+    // historial primero: dibujarProgresoEjercicios necesita historialActual actualizado
     await cargarHistorial();
+    await cargarRutinasParaHistorial(personaElegida);
     await cargarNotasPersona(personaElegida);
-    // El preview se actualiza dentro de cargarRutinasParaHistorial con la primera rutina
 });
 
-// Al cambiar de rutina en el selector, actualiza el preview con sus ejercicios
+// Al cambiar de rutina: recarga lista interactiva y preview
 selectorRutinaHistorial.addEventListener("change", async () => {
     await cargarEjerciciosRutina(selectorRutinaHistorial.value);
 });
 
 
-/* ---------- PASO 2B: preview de la rutina seleccionada ----------
-    cargarEjerciciosRutina: busca la rutina en rutinasDisponibles (sin
-    request extra), luego GET /ejercicios?rutinaId=X y delega el dibujo
-    a dibujarPreviewRutina.
-
-    dibujarPreviewRutina: actualiza la tarjeta de la columna derecha con:
-      · Nombre de la rutina en #preview-rutina-nombre
-      · Un pill por cada día en #preview-rutina-dias
-      · Un ítem por ejercicio en #preview-rutina-ejercicios
-        mostrando nombre, series × reps y descanso.
+/* ---------- PASO 2B: cargar ejercicios y títulos de la rutina ----------
+    Trae ejercicios y títulos de día en paralelo con Promise.all.
+    Con esos datos dibuja tanto la lista interactiva como la preview.
 */
 async function cargarEjerciciosRutina(rutinaId) {
     const rutina = rutinasDisponibles.find(r => String(r.id) === String(rutinaId));
     if (!rutina) return;
 
     try {
-        const respuesta  = await axios.get(`${URL_BASE}/ejercicios?rutinaId=${rutinaId}`);
-        const ejercicios = respuesta.data;
-        dibujarPreviewRutina(rutina, ejercicios);
+        const [respEjercicios, respTitulos] = await Promise.all([
+            axios.get(`${URL_BASE}/ejercicios?rutinaId=${rutinaId}`),
+            axios.get(`${URL_BASE}/diasTitulos?rutinaId=${rutinaId}`)
+        ]);
+
+        const ejercicios  = respEjercicios.data;
+        const diasTitulos = respTitulos.data;
+
+        dibujarPreviewRutina(rutina, ejercicios, diasTitulos);
+        dibujarRutinaInteractiva(ejercicios, diasTitulos);
+        dibujarProgresoEjercicios(ejercicios);
+
     } catch (error) {
         console.error("Error al cargar ejercicios de la rutina:", error);
     }
 }
 
-function dibujarPreviewRutina(rutina, ejercicios) {
-    const nombre     = document.getElementById("preview-rutina-nombre");
-    const diasDiv    = document.getElementById("preview-rutina-dias");
-    const ejercDiv   = document.getElementById("preview-rutina-ejercicios");
 
-    // Nombre
-    nombre.textContent = rutina.nombre || "Sin nombre";
-    nombre.classList.toggle("vacio-nombre", !rutina.nombre);
+/* ---------- PASO 3: lista interactiva de ejercicios ----------
+    Dibuja en #lista-rutina-ejercicios la estructura:
+        Día (acordeón clickeable)
+        → Grupo muscular (etiqueta naranja)
+        → Ejercicio (click para abrir input de peso)
+        → Form inline: input kg + botón Guardar
 
-    // Pills de días
-    diasDiv.innerHTML = "";
-    (rutina.dias || []).forEach(dia => {
-        const pill       = document.createElement("span");
-        pill.className   = "preview-dia";
-        pill.textContent = dia;
-        diasDiv.appendChild(pill);
-    });
+    El primer día arranca abierto. Los demás comienzan cerrados.
+    Al hacer clic en el header de un día se alterna abierto/cerrado.
+    Al hacer clic en un ejercicio se alterna el form inline visible/oculto.
+*/
+function dibujarRutinaInteractiva(ejercicios, diasTitulos) {
+    listaRutinaEjercicios.innerHTML = "";
 
-    // Lista de ejercicios
-    ejercDiv.innerHTML = "";
     if (ejercicios.length === 0) {
-        ejercDiv.innerHTML = '<p class="vacio">Sin ejercicios aún</p>';
+        listaRutinaEjercicios.innerHTML = "<p>Esta rutina no tiene ejercicios aún.</p>";
         return;
     }
 
-    ejercicios.forEach(ej => {
-        // Busca el registro más reciente de este ejercicio (ya están newest-first)
-        const ultimoReg  = historialActual.find(
-            r => r.ejercicio.toLowerCase() === ej.nombre.toLowerCase()
-        );
-        const ultimoPeso = ultimoReg
-            ? `Último: ${ultimoReg.peso}kg · ${ultimoReg.fecha}`
-            : "Sin registros aún";
+    // mapa dia → titulo (ej: "Lunes" → "Pecho y Tríceps")
+    const mapaTitulos = {};
+    (diasTitulos || []).forEach(t => { mapaTitulos[t.dia] = t.titulo; });
 
-        const item       = document.createElement("div");
-        item.className   = "preview-ejercicio";
-        item.innerHTML   = `
-            <strong>${ej.nombre}</strong>
-            <span>${ej.series} series × ${ej.repeticiones} reps · ${ej.descanso}</span>
-            <span class="preview-ejercicio__peso">${ultimoPeso}</span>
-        `;
-        ejercDiv.appendChild(item);
+    // agrupamos ejercicios por día: { "Lunes": [ej1, ej2], ... }
+    const porDia = {};
+    ejercicios.forEach(ej => {
+        const dia = ej.dia || "Sin día";
+        if (!porDia[dia]) porDia[dia] = [];
+        porDia[dia].push(ej);
+    });
+
+    let esPrimerDia = true;
+
+    Object.keys(porDia).forEach(dia => {
+        const tituloCompleto = mapaTitulos[dia] ? `${dia} — ${mapaTitulos[dia]}` : dia;
+
+        // --- acordeón del día ---
+        const acordeon  = document.createElement("div");
+        acordeon.className = "dia-acordeon";
+
+        const header = document.createElement("div");
+        header.className   = "dia-acordeon__header";
+        header.textContent = tituloCompleto;
+
+        const body = document.createElement("div");
+        // el primer día arranca abierto
+        body.className = esPrimerDia ? "dia-acordeon__body abierto" : "dia-acordeon__body";
+        esPrimerDia = false;
+
+        // click en el header → toggle abierto/cerrado
+        header.addEventListener("click", () => {
+            body.classList.toggle("abierto");
+        });
+
+        // agrupamos ejercicios de este día por grupo muscular
+        const porGrupo = {};
+        porDia[dia].forEach(ej => {
+            const grupo = ej.grupoMuscular || "Sin grupo";
+            if (!porGrupo[grupo]) porGrupo[grupo] = [];
+            porGrupo[grupo].push(ej);
+        });
+
+        // por cada grupo muscular dibujamos su bloque
+        Object.keys(porGrupo).forEach(grupo => {
+            const divGrupo = document.createElement("div");
+            divGrupo.className = "grupo-muscular";
+
+            const tituloGrupo = document.createElement("div");
+            tituloGrupo.className   = "grupo-muscular__titulo";
+            tituloGrupo.textContent = grupo;
+            divGrupo.appendChild(tituloGrupo);
+
+            // por cada ejercicio: info clickeable + form inline oculto
+            porGrupo[grupo].forEach(ej => {
+                const item = document.createElement("div");
+                item.className = "ejercicio-item";
+
+                // info del ejercicio (click para mostrar el form)
+                const info = document.createElement("div");
+                info.className   = "ejercicio-item__info";
+                info.innerHTML   = `
+                    <span class="ejercicio-item__nombre">${ej.nombre}</span>
+                    <span class="ejercicio-item__detalle">${ej.series} series × ${ej.repeticiones} reps · ${ej.descanso}</span>
+                `;
+
+                // form inline para registrar el peso (oculto por defecto)
+                const form = document.createElement("form");
+                form.className = "ejercicio-item__form";
+
+                const inputPeso = document.createElement("input");
+                inputPeso.type        = "number";
+                inputPeso.placeholder = "kg de hoy";
+                inputPeso.min         = "0";
+                inputPeso.step        = "0.5";
+
+                const btnGuardar = document.createElement("button");
+                btnGuardar.type        = "submit";
+                btnGuardar.textContent = "Guardar";
+
+                form.appendChild(inputPeso);
+                form.appendChild(btnGuardar);
+
+                // click en la info → toggle del form inline
+                info.addEventListener("click", () => {
+                    item.classList.toggle("activo");
+                    if (item.classList.contains("activo")) {
+                        inputPeso.focus();
+                    }
+                });
+
+                // submit del form → registra el peso y cierra el form
+                form.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    const peso = inputPeso.value.trim();
+                    if (!peso) return;
+                    await registrarPeso(ej, peso, item);
+                });
+
+                item.appendChild(info);
+                item.appendChild(form);
+                divGrupo.appendChild(item);
+            });
+
+            body.appendChild(divGrupo);
+        });
+
+        acordeon.appendChild(header);
+        acordeon.appendChild(body);
+        listaRutinaEjercicios.appendChild(acordeon);
     });
 }
 
 
-/* ---------- PASO 3: mostrar historial y resumen ----------
-    cargarHistorial: GET /historial → normaliza todos los campos a String
-    para evitar inconsistencias de tipo, filtra por personaElegida y
-    ordena del registro más nuevo al más viejo (por id descendente).
-    Delega el pintado a dibujarLista y calcularResumen.
-
-    dibujarLista: vacía #lista-historial y crea una tarjeta por registro
-    con ejercicio, fecha, peso, reps, dificultad y botón Borrar.
-
-    calcularResumen: en #resumen muestra cuatro métricas calculadas:
-        · Progreso de carga por ejercicio (primer peso → último peso).
-        · Última rutina registrada.
-        · Ejercicios con dificultad "alta".
-        · Sugerencia del entrenador (llega como parámetro desde PASO 5).
+/* ---------- PASO 4: registrar el peso de un ejercicio ----------
+    - POST /historial con { personaId, rutinaId, ejercicio, peso, fecha }.
+    - Después del POST actualiza historialActual y refresca la preview.
+    - Cierra el form inline y muestra el toast de confirmación.
 */
-async function cargarHistorial(sugerencia = "") {
+async function registrarPeso(ejercicio, peso, itemElement) {
+    try {
+        await axios.post(`${URL_BASE}/historial`, {
+            personaId: personaElegida,
+            rutinaId:  String(selectorRutinaHistorial.value),
+            ejercicio: ejercicio.nombre.trim(),
+            peso,
+            fecha: new Date().toISOString().slice(0, 10)
+        });
+
+        // actualiza historialActual en memoria y refresca la preview
+        await cargarHistorial();
+        await cargarEjerciciosRutina(selectorRutinaHistorial.value);
+
+        // cierra el form inline
+        itemElement.classList.remove("activo");
+        mostrarToast(`¡Peso guardado para ${ejercicio.nombre}!`);
+
+    } catch (error) {
+        console.error("Error al registrar peso:", error);
+    }
+}
+
+
+/* ---------- PASO 5: cargar historial en memoria ----------
+    Trae todos los registros de la persona activa, los normaliza y los
+    ordena del más nuevo al más viejo. Se guarda en historialActual para
+    que dibujarPreviewRutina pueda mostrar el último peso sin GET extra.
+*/
+async function cargarHistorial() {
     if (!personaElegida) return;
 
     try {
@@ -239,125 +372,36 @@ async function cargarHistorial(sugerencia = "") {
         const registros  = (respuesta.data || [])
             .map(registro => ({
                 ...registro,
-                personaId:   String(registro.personaId   ?? "").trim(),
-                rutinaId:    String(registro.rutinaId    ?? "").trim(),
-                ejercicio:   String(registro.ejercicio   ?? "").trim(),
-                fecha:       String(registro.fecha       ?? "").trim() || "Sin fecha",
-                dificultad:  String(registro.dificultad  ?? "").trim() || "sin definir"
+                personaId:  String(registro.personaId  ?? "").trim(),
+                rutinaId:   String(registro.rutinaId   ?? "").trim(),
+                ejercicio:  String(registro.ejercicio  ?? "").trim(),
+                fecha:      String(registro.fecha      ?? "").trim() || "Sin fecha"
             }))
             .filter(r => r.personaId === String(personaElegida))
             .filter(r => r.ejercicio.length > 0)
             .sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
 
-        historialActual = registros; // queda en memoria para el preview de pesos
-        dibujarLista(registros);
-        calcularResumen(registros, sugerencia);
+        historialActual = registros;
+
     } catch (error) {
         console.error("Error al cargar historial:", error);
     }
 }
 
-function dibujarLista(registros) {
-    listaHistorial.innerHTML = "";
 
-    if (registros.length === 0) {
-        listaHistorial.innerHTML = "<p>No hay registros para esta persona todavía.</p>";
-        return;
-    }
-
-    registros.forEach(reg => {
-        const tarjeta       = document.createElement("div");
-        tarjeta.className   = "bloque tarjeta";
-        tarjeta.innerHTML   = `
-            <p><strong>${reg.ejercicio}</strong></p>
-            <p>Fecha: ${reg.fecha}</p>
-            <p>Peso: ${reg.peso}kg | Reps: ${reg.repeticiones} | Dificultad: ${reg.dificultad}</p>
-            <button type="button" class="btn-borrar" data-id="${reg.id}">Borrar</button>
-        `;
-        listaHistorial.appendChild(tarjeta);
-    });
-}
-
-function calcularResumen(registros, sugerencia) {
-    if (!resumenDiv) return;
-
-    const total            = registros.length;
-    const ejerciciosUnicos = [...new Set(registros.map(r => r.ejercicio))];
-
-    const progreso = ejerciciosUnicos.map(ejercicio => {
-        const items   = registros.filter(r => r.ejercicio === ejercicio);
-        const primero = items[items.length - 1];
-        const ultimo  = items[0];
-        if (!primero || !ultimo) return null;
-        return `• ${ejercicio}: ${primero.peso}kg → ${ultimo.peso}kg`;
-    }).filter(Boolean).join("<br>");
-
-    const ultimoRegistro    = registros[0];
-    const ultimaRutina      = ultimoRegistro ? `Rutina ${ultimoRegistro.rutinaId}` : "Sin registros";
-    const ejerciciosDific   = registros
-        .filter(r => String(r.dificultad).toLowerCase() === "alta")
-        .map(r => r.ejercicio)
-        .join(", ");
-
-    resumenDiv.innerHTML = `
-        <p><strong>Total de registros:</strong> ${total}</p>
-        <p><strong>Progreso de carga:</strong><br>${progreso || "Sin datos"}</p>
-        <p><strong>Último cambio de rutina:</strong> ${ultimaRutina}</p>
-        <p><strong>Ejercicios que cuestan:</strong> ${ejerciciosDific || "Ninguno"}</p>
-        <p><strong>Próximo cambio sugerido:</strong> ${sugerencia || "Sin sugerencias por ahora"}</p>
-    `;
-}
-
-
-/* ---------- PASO 4: registrar un entrenamiento ----------
-    Submit de #formulario-registro: recoge todos los campos del formulario,
-    genera la fecha de hoy automáticamente con toISOString y hace POST
-    /historial. Luego limpia el formulario y recarga el historial.
-*/
-formularioRegistro.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const nuevoRegistro = {
-        personaId:    selectorPersona.value,
-        rutinaId:     Number(selectorRutinaHistorial.value),
-        ejercicio:    document.getElementById("registro-ejercicio").value,
-        peso:         document.getElementById("registro-peso").value,
-        repeticiones: document.getElementById("registro-repeticiones").value,
-        dificultad:   document.getElementById("registro-dificultad").value,
-        fecha:        new Date().toISOString().slice(0, 10)
-    };
-
-    try {
-        await axios.post(`${URL_BASE}/historial`, nuevoRegistro);
-        formularioRegistro.reset();
-        await cargarHistorial();
-    } catch (error) {
-        console.error("Error al registrar:", error);
-    }
-});
-
-
-/* ---------- PASO 5: guardar notas del entrenador ----------
-    PASO 5A — sugerencia: PATCH /personas/:id con el texto del textarea.
-    Muestra modal y recarga el historial pasándole la sugerencia para
-    que aparezca en el resumen al instante.
-
-    PASO 5B — dificultades: mismo patrón, campo distinto. Guarda texto
-    libre sobre qué le cuesta a la persona y muestra modal de confirmación.
+/* ---------- PASO 6: guardar notas del entrenador ----------
+    PASO 6A — sugerencia: PATCH /personas/:id con el texto del textarea.
+    PASO 6B — dificultades: mismo patrón, campo distinto.
 */
 formularioSugerencia.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const textoSugerencia = inputSugerencia.value;
-
     try {
         await axios.patch(`${URL_BASE}/personas/${personaElegida}`, {
-            sugerencia: textoSugerencia
+            sugerencia: inputSugerencia.value
         });
-
         mostrarToast("¡Sugerencia guardada!");
         await cargarNotasPersona(personaElegida);
-        await cargarHistorial(textoSugerencia);
 
     } catch (error) {
         console.error("Error al guardar la sugerencia:", error);
@@ -372,28 +416,180 @@ formularioDificultades.addEventListener("submit", async (e) => {
             dificultades: inputDificultades.value
         });
         mostrarToast("¡Notas guardadas!");
+        await cargarNotasPersona(personaElegida);
     } catch (error) {
         console.error("Error al guardar dificultades:", error);
     }
 });
 
 
-/* ---------- PASO 6: borrar un registro ----------
-    Click delegation en #lista-historial: detecta el botón Borrar por
-    data-id, hace DELETE /historial/:id y recarga la lista.
-    Usar delegation evita agregar N listeners, uno por cada tarjeta.
+/* ---------- PASO 7: progreso de cargas en la columna izquierda ----------
+    Por cada ejercicio de la rutina muestra los últimos 5 pesos registrados
+    en orden cronológico (más viejo primero → más nuevo al final) para ver
+    la progresión de un vistazo.
+    Si un ejercicio no tiene registros, no se muestra en la lista.
 */
-listaHistorial.addEventListener("click", async (e) => {
-    if (e.target.tagName !== "BUTTON" || !e.target.dataset.id) return;
+function dibujarProgresoEjercicios(ejercicios) {
+    const contenedor = document.getElementById("progreso-ejercicios");
+    // conservamos el h2, reemplazamos solo lo que sigue
+    contenedor.innerHTML = "<h2>Progreso de cargas</h2>";
 
-    const idRegistro = e.target.dataset.id;
-    try {
-        await axios.delete(`${URL_BASE}/historial/${idRegistro}`);
-        await cargarHistorial();
-    } catch (error) {
-        console.error("Error al borrar:", error);
+    if (ejercicios.length === 0) {
+        contenedor.innerHTML += "<p class='vacio'>Sin ejercicios en esta rutina.</p>";
+        return;
     }
-});
+
+    let hayRegistros = false;
+
+    ejercicios.forEach(ej => {
+        const nombreEj = ej.nombre.trim().toLowerCase();
+
+        // buscamos todos los registros de este ejercicio, del más viejo al más nuevo
+        const registros = historialActual
+            .filter(r => r.ejercicio.toLowerCase() === nombreEj)
+            .slice()           // no mutar el array original
+            .reverse()         // historialActual viene de nuevo a viejo; reverse → viejo a nuevo
+            .slice(-5);        // máximo últimos 5
+
+        if (registros.length === 0) return; // sin historial: no dibujamos este ejercicio
+        hayRegistros = true;
+
+        const bloque = document.createElement("div");
+        bloque.className = "progreso-ejercicio";
+
+        const titulo = document.createElement("div");
+        titulo.className   = "progreso-ejercicio__nombre";
+        titulo.textContent = ej.nombre.trim();
+        bloque.appendChild(titulo);
+
+        const lista = document.createElement("div");
+        lista.className = "progreso-ejercicio__registros";
+
+        registros.forEach((reg, idx) => {
+            const fila = document.createElement("div");
+            fila.className = "progreso-registro";
+
+            // flecha de comparación con el registro anterior
+            let indicador = "";
+            if (idx > 0) {
+                const pesoActual   = parseFloat(registros[idx].peso);
+                const pesoAnterior = parseFloat(registros[idx - 1].peso);
+                if (pesoActual > pesoAnterior)      indicador = " ↑";
+                else if (pesoActual < pesoAnterior) indicador = " ↓";
+            }
+
+            fila.innerHTML = `
+                <span class="progreso-registro__fecha">${reg.fecha}</span>
+                <span class="progreso-registro__peso">${reg.peso} kg${indicador}</span>
+            `;
+            lista.appendChild(fila);
+        });
+
+        bloque.appendChild(lista);
+        contenedor.appendChild(bloque);
+    });
+
+    if (!hayRegistros) {
+        contenedor.innerHTML += "<p class='vacio'>Todavía no hay pesos registrados para esta rutina.</p>";
+    }
+}
+
+
+/* ---------- PASO 9: preview de la rutina seleccionada ----------
+    Muestra la rutina agrupada por día y grupo muscular en la columna
+    derecha. Para cada ejercicio busca el último peso registrado en
+    historialActual y lo muestra debajo del nombre.
+*/
+function dibujarPreviewRutina(rutina, ejercicios, diasTitulos) {
+    const nombre   = document.getElementById("preview-rutina-nombre");
+    const diasDiv  = document.getElementById("preview-rutina-dias");
+    const ejercDiv = document.getElementById("preview-rutina-ejercicios");
+
+    // Nombre
+    nombre.textContent = rutina.nombre || "Sin nombre";
+    nombre.classList.toggle("vacio-nombre", !rutina.nombre);
+
+    // Pills de días
+    diasDiv.innerHTML = "";
+    (rutina.dias || []).forEach(dia => {
+        const pill       = document.createElement("span");
+        pill.className   = "preview-dia";
+        pill.textContent = dia;
+        diasDiv.appendChild(pill);
+    });
+
+    ejercDiv.innerHTML = "";
+
+    if (ejercicios.length === 0) {
+        ejercDiv.innerHTML = '<p class="vacio">Sin ejercicios aún</p>';
+        return;
+    }
+
+    // mapa dia → titulo
+    const mapaTitulos = {};
+    (diasTitulos || []).forEach(t => { mapaTitulos[t.dia] = t.titulo; });
+
+    // agrupamos por día
+    const porDia = {};
+    ejercicios.forEach(ej => {
+        const dia = ej.dia || "Sin día";
+        if (!porDia[dia]) porDia[dia] = [];
+        porDia[dia].push(ej);
+    });
+
+    Object.keys(porDia).forEach(dia => {
+        const tituloCompleto = mapaTitulos[dia] ? `${dia} — ${mapaTitulos[dia]}` : dia;
+
+        const divDia = document.createElement("div");
+        divDia.className = "dia-grupo";
+
+        const headerDia = document.createElement("div");
+        headerDia.className   = "dia-grupo__header";
+        headerDia.textContent = tituloCompleto;
+        divDia.appendChild(headerDia);
+
+        // agrupamos por grupo muscular
+        const porGrupo = {};
+        porDia[dia].forEach(ej => {
+            const grupo = ej.grupoMuscular || "Sin grupo";
+            if (!porGrupo[grupo]) porGrupo[grupo] = [];
+            porGrupo[grupo].push(ej);
+        });
+
+        Object.keys(porGrupo).forEach(grupo => {
+            const divGrupo = document.createElement("div");
+            divGrupo.className = "grupo-muscular";
+
+            const tituloGrupo = document.createElement("div");
+            tituloGrupo.className   = "grupo-muscular__titulo";
+            tituloGrupo.textContent = grupo;
+            divGrupo.appendChild(tituloGrupo);
+
+            porGrupo[grupo].forEach(ej => {
+                // último peso registrado para este ejercicio
+                const ultimoReg  = historialActual.find(
+                    r => r.ejercicio.toLowerCase() === ej.nombre.trim().toLowerCase()
+                );
+                const ultimoPeso = ultimoReg
+                    ? `Último: ${ultimoReg.peso}kg · ${ultimoReg.fecha}`
+                    : "Sin registros aún";
+
+                const item = document.createElement("div");
+                item.className = "preview-ejercicio";
+                item.innerHTML = `
+                    <strong>${ej.nombre}</strong>
+                    <span>${ej.series} series × ${ej.repeticiones} reps · ${ej.descanso}</span>
+                    <span class="preview-ejercicio__peso">${ultimoPeso}</span>
+                `;
+                divGrupo.appendChild(item);
+            });
+
+            divDia.appendChild(divGrupo);
+        });
+
+        ejercDiv.appendChild(divDia);
+    });
+}
 
 
 /* ---------- ARRANQUE ----------
