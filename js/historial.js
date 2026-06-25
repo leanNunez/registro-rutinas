@@ -125,11 +125,11 @@ async function cargarRutinasParaHistorial(idPersona) {
 
 async function cargarNotasPersona(idPersona) {
     try {
-        const respuesta = await axios.get(`${URL_BASE}/personas/${idPersona}`);
+        const respuesta = await axios.get(`${URL_BASE}/personas/${idPersona}`); // traemos la persona completa para leer sus notas
         const persona   = respuesta.data;
-        inputSugerencia.value   = persona.sugerencia   || "";
-        inputDificultades.value = persona.dificultades || "";
-        mostrarNotasEnPreview(persona.sugerencia, persona.dificultades);
+        inputSugerencia.value   = persona.sugerencia   || ""; // pre-llenamos el textarea (o vacío si no hay nada guardado)
+        inputDificultades.value = persona.dificultades || ""; // ídem para dificultades
+        mostrarNotasEnPreview(persona.sugerencia, persona.dificultades); // actualizamos la preview de la derecha
     } catch (error) {
         console.error("Error al cargar notas de la persona:", error);
     }
@@ -557,9 +557,9 @@ function activarEdicionRegistro(reg, filaElement, ejercicios) {
 }
 
 async function borrarRegistroHistorial(id, ejercicios) {
-    await axios.delete(`${URL_BASE}/historial/${id}`);
-    await cargarHistorial();
-    await cargarEjerciciosRutina(selectorRutinaHistorial.value);
+    await axios.delete(`${URL_BASE}/historial/${id}`); // borramos el registro del servidor
+    await cargarHistorial(); // actualizamos historialActual en memoria
+    await cargarEjerciciosRutina(selectorRutinaHistorial.value); // redibujamos progreso y preview
     mostrarToast("Registro eliminado.");
 }
 

@@ -5,9 +5,9 @@
       "nombre": "Lucía Fernández",
       "edad": 28,
       "peso": 64,
-      "estatura": 1.68,
+      "estatura": 168,
       "objetivo": "Ganar fuerza",
-      "sugerencia": ".",
+      "sugerencia": "subir 10 kg en peso muerto",
       "dificultades": "le cuesta la profundidad en sentadilla\n"
     },
     {
@@ -15,20 +15,10 @@
       "nombre": "Marco Díaz",
       "edad": 34,
       "peso": 82,
-      "estatura": 1.81,
+      "estatura": 181,
       "objetivo": "Bajar grasa",
       "sugerencia": "",
       "dificultades": ""
-    },
-    {
-      "nombre": "Juan Perez",
-      "edad": 19,
-      "peso": 80,
-      "estatura": 182,
-      "objetivo": "ganar musculo",
-      "sugerencia": "",
-      "dificultades": "",
-      "id": 3
     },
     {
       "nombre": "juan Pablo",
