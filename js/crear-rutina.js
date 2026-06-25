@@ -54,8 +54,7 @@ const mostrarDatosPersona = async (id) => {
    const datosPersona = document.getElementById("datos-persona");
    datosPersona.innerHTML= "";
 
-   // estatura: datos viejos en metros (<3), datos nuevos en cm (>=3)
-   const estaturaM = persona.estatura >= 3 ? persona.estatura / 100 : persona.estatura;
+   const estaturaM = persona.estatura / 100;
    const imc = (persona.peso && estaturaM)
       ? (persona.peso / (estaturaM * estaturaM)).toFixed(1)
       : "—";
@@ -65,7 +64,7 @@ const mostrarDatosPersona = async (id) => {
    datosPersona.appendChild(parrafoPeso);
    // estatura
    const parrafoEstatura = document.createElement("p");
-   const estaturaDisplay = persona.estatura >= 3 ? `${persona.estatura} cm` : `${(persona.estatura * 100).toFixed(0)} cm`;
+   const estaturaDisplay = `${persona.estatura} cm`;
    parrafoEstatura.textContent = `Estatura : ${estaturaDisplay}`;
    datosPersona.appendChild(parrafoEstatura)
    //objetivo
@@ -77,7 +76,7 @@ const mostrarDatosPersona = async (id) => {
    parrafoImc.textContent = `IMC : ${imc}`;
    datosPersona.appendChild(parrafoImc);
    mostrarRutina(id);
-   // la dieta ahora pertenece a la rutina, no a la persona — se carga desde mostrarRutina
+   // la dieta pertenece a la rutina, no a la persona — se carga desde mostrarRutina
 }
 
 /* ---------- PASO 3: mostrar las rutinas de la persona ----------
@@ -158,20 +157,20 @@ const mostrarRutina = async (id) => {
    desactivarModoEdicion: resetea el formulario y vuelve al modo creación.
 */
 const activarModoEdicion = (rutina) => {
-   rutinaEditando = rutina.id;
-   document.getElementById("rutina-nombre").value = rutina.nombre;
+   rutinaEditando = rutina.id; // guardamos el id para que el submit sepa que debe hacer PATCH y no POST
+   document.getElementById("rutina-nombre").value = rutina.nombre; // pre-llenamos el input con el nombre actual
    document.querySelectorAll("#formulario-rutina input[name=dia]").forEach(cb => {
-      cb.checked = rutina.dias.includes(cb.value);
+      cb.checked = rutina.dias.includes(cb.value); // tilda el checkbox si su value está en el array de días de la rutina
    });
-   document.querySelector("#formulario-rutina button[type=submit]").textContent = "Guardar cambios";
-   document.getElementById("btn-cancelar-edicion").style.display = "inline-block";
+   document.querySelector("#formulario-rutina button[type=submit]").textContent = "Guardar cambios"; // cambiamos el texto del botón
+   document.getElementById("btn-cancelar-edicion").style.display = "inline-block"; // mostramos el botón cancelar
 };
 
 const desactivarModoEdicion = () => {
-   rutinaEditando = null;
-   document.getElementById("formulario-rutina").reset();
-   document.querySelector("#formulario-rutina button[type=submit]").textContent = "Agregar rutina";
-   document.getElementById("btn-cancelar-edicion").style.display = "none";
+   rutinaEditando = null; // volvemos al modo creación (submit hará POST)
+   document.getElementById("formulario-rutina").reset(); // limpia todos los campos del formulario
+   document.querySelector("#formulario-rutina button[type=submit]").textContent = "Agregar rutina"; // restauramos el texto del botón
+   document.getElementById("btn-cancelar-edicion").style.display = "none"; // ocultamos el botón cancelar
 };
 
 document.getElementById("btn-cancelar-edicion").addEventListener("click", desactivarModoEdicion);
@@ -615,4 +614,39 @@ document.getElementById("formulario-persona").addEventListener("submit", async (
 
    // Volvemos a cargar todas las personas (aparece la nueva)
    cargarPersonas();
+});
+
+/* ---------- PASO 11: borrar una persona (con cascada) ----------
+   - Trae todas las rutinas de la persona.
+   - Por cada rutina borra en cascada: ejercicios, diasTitulos, dietas e historial.
+   - Después borra la rutina y finalmente la persona.
+*/
+const borrarPersona = async (id) => {
+   const respRutinas = await axios.get(`http://localhost:3000/rutinas?personaId=${id}`);
+
+   for (const rutina of respRutinas.data) {
+      const [respEj, respTit, respDiet, respHist] = await Promise.all([
+         axios.get(`http://localhost:3000/ejercicios?rutinaId=${rutina.id}`),
+         axios.get(`http://localhost:3000/diasTitulos?rutinaId=${rutina.id}`),
+         axios.get(`http://localhost:3000/dietas?rutinaId=${rutina.id}`),
+         axios.get(`http://localhost:3000/historial?rutinaId=${rutina.id}`)
+      ]);
+
+      await Promise.all([
+         ...respEj.data.map(e   => axios.delete(`http://localhost:3000/ejercicios/${e.id}`)),
+         ...respTit.data.map(t  => axios.delete(`http://localhost:3000/diasTitulos/${t.id}`)),
+         ...respDiet.data.map(d => axios.delete(`http://localhost:3000/dietas/${d.id}`)),
+         ...respHist.data.map(h => axios.delete(`http://localhost:3000/historial/${h.id}`))
+      ]);
+
+      await axios.delete(`http://localhost:3000/rutinas/${rutina.id}`);
+   }
+
+   await axios.delete(`http://localhost:3000/personas/${id}`);
+   document.getElementById("selector-persona").innerHTML = "";
+   cargarPersonas();
+};
+
+document.getElementById("btn-borrar-persona").addEventListener("click", () => {
+   borrarPersona(personaElegida);
 });

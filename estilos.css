@@ -1602,3 +1602,16 @@ fieldset label:has(input:checked) {
     animation: none !important;
   }
 }
+
+#btn-borrar-persona {
+  background: var(--error);
+  color: var(--blanco);
+  border-color: var(--error);
+  display: block;
+  margin: 0.75rem auto 0;
+}
+
+#btn-borrar-persona:hover {
+  background: #cc0000;
+  border-color: #cc0000;
+}
